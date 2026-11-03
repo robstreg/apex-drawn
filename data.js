@@ -71,12 +71,12 @@ window.APEX = {
     risultati: [
       ["Nihholo",       "1:02,381"],
       ["Risorto",       "1:04,378"],
-      ["RobstregMN",    "1:05,365"],
+      ["BatSciscio1",    "1:05,365"],
       ["SaettaMcFabri", "1:05,444"],
-      ["Patabomber",    "1:05,818"],
-      ["BatSciscio1",   "1:06,343"],
-      ["Giusmacher2",   "1:08,078"],
-      ["Jarjtodt81",    "1:08,081"]
+      ["RobstregMN",    "1:05,818"],
+      ["Giusmacher2",   "1:06,343"],
+      ["Jarjtodt81",   "1:08,078"],
+      ["Patabomber",    "1:08,081"]
     ]
   },
 

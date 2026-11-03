@@ -95,7 +95,19 @@ window.APEX = {
         ["Patabomber",    "+33,996"]
       ]
     },
-    // 2: { arrivo: [ ... ] },   <- ogni GP finisce con una virgola
+   2: {
+      giroVeloce: { pilota: "Nihholo", tempo: "1:16,890" },
+      arrivo: [
+        ["Nihholo", "6:37,535"],
+        ["Risorto", "+11,999"],
+        ["SaettaMcFabri", "+22,929"],
+        ["RobstregMN", "+26,064"],
+        ["BatSciscio1", "+29,182"],
+        ["Giusmacher2", "+36,476"],
+        ["Jarjtodt81", "+37,354"],
+        ["Patabomber", "+38,894"]
+      ]
+    },// 2: { arrivo: [ ... ] },   <- ogni GP finisce con una virgola
   },
 
   /* Penalità (decurtazione di punti in classifica), facoltativo.

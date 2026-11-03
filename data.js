@@ -49,7 +49,7 @@ window.APEX = {
   /* Calendario: completa circuito e data quando li decidi (lascia "" se non sono definiti). */
   calendario: [
     { n: 1,  nome: "GP 1",  circuito: "Circuito 1", data: "02/11/2026" },
-    { n: 2,  nome: "GP 2",  circuito: "", data: "" },
+    { n: 2,  nome: "GP 2",  circuito: "Circuito cittadino diurno", data: "03/11/2026" },
     { n: 3,  nome: "GP 3",  circuito: "", data: "" },
     { n: 4,  nome: "GP 4",  circuito: "", data: "" },
     { n: 5,  nome: "GP 5",  circuito: "", data: "" },

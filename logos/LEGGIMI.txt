@@ -1,0 +1,6 @@
+Metti qui i loghi delle squadre (PNG, meglio con sfondo trasparente e quadrati) con questi nomi esatti:
+  nj-racing.png
+  royal-lion.png
+  raptor-racing.png
+  italia-eagle.png
+Finche' mancano, il sito mostra un'icona esagonale con le iniziali e il colore della squadra.

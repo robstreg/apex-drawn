@@ -114,6 +114,15 @@ function compute() {
 const S = compute();
 
 /* ---------- componenti ---------- */
+function gpFoto(n) { const c = D.calendario.find(x => x.n === n) || {}; return c.foto || 'foto/gp-' + n + '.jpg'; }
+function banner(n) {
+  return '<figure class="banner"><img src="' + esc(gpFoto(n)) + '" alt="Foto del GP ' + n + '" loading="lazy" onerror="this.parentNode.remove()"></figure>';
+}
+window.__imgFail = img => {
+  const p = document.createElement('p'); p.className = 'empty';
+  p.textContent = 'Immagine non trovata: controlla che il file ' + img.getAttribute('src') + ' sia nella cartella giusta e che il nome sia identico.';
+  img.parentNode.replaceWith(p);
+};
 function logo(t, size) {
   const s = size || 56;
   const img = t.logo ? '<img src="' + esc(t.logo) + '" alt="" data-c="' + t.colore + '" data-i="' + esc(t.sigla) + '" onerror="__lf(this)">' :
@@ -166,7 +175,7 @@ pages.home = function () {
   let last = '';
   if (S.played) {
     const r = S.races[S.lastRound];
-    last = '<section class="panel"><h2 class="h2">' + esc(r.meta.nome) + '</h2>' +
+    last = '<section class="panel">' + banner(r.n) + '<h2 class="h2">' + esc(r.meta.nome) + '</h2>' +
       (r.meta.circuito ? '<p class="muted" style="margin:-8px 0 14px">' + esc(r.meta.circuito) + '</p>' : '') +
       '<div class="tower">' + r.rows.slice(0, 3).map((x, i) => row(x.pos, colorOf(x.nick), x.nick, i === 0 ? x.time : x.time, pts(x.pts), i)).join('') + '</div>' +
       '<p class="note"><a href="#/race-results/' + r.n + '">Risultato completo</a></p></section>';
@@ -229,8 +238,25 @@ pages.teams = function () {
     '<div><h3>' + esc(t.def.nome) + '</h3><p>' + t.rank + '° nei costruttori, ' + t.total + ' punti</p></div></div>' +
     '<div class="tower">' + t.mine.slice().sort((a, b) => a.rank - b.rank).map((d, i) => row(d.rank, t.def.colore, d.nick, d.rank + '° nei piloti', pts(d.total), i)).join('') + '</div>' +
     '<div class="tstats"><div><b>' + t.wins + '</b><span>Vittorie</span></div><div><b>' + t.podiums + '</b><span>Podi</span></div><div><b>' + t.poles + '</b><span>Pole</span></div></div></article>'
-  ).join('') + '</div>';
+  ).join('') + '</div>' + commentsBox();
 };
+
+/* commenti (Disqus): compaiono solo se in data.js c'è lo shortname */
+function discusName() { const s = D.commenti && D.commenti.disqus; return s && /^[a-z0-9-]+$/i.test(s) ? s : ''; }
+function commentsBox() {
+  return discusName() ? '<section class="sec comments" aria-label="Commenti"><h2 class="h2">Commenti</h2><div class="panel"><div id="disqus_thread"></div></div></section>' : '';
+}
+function loadComments() {
+  const sn = discusName();
+  if (!sn || !document.getElementById('disqus_thread')) return;
+  const url = location.href.split('#')[0] + '#/teams';
+  const cfg = function () { this.page.url = url; this.page.identifier = 'apex-drawn-teams'; };
+  if (window.DISQUS) { window.DISQUS.reset({ reload: true, config: cfg }); return; }
+  window.disqus_config = cfg;
+  const s = document.createElement('script');
+  s.src = 'https://' + sn + '.disqus.com/embed.js'; s.async = true; s.setAttribute('data-timestamp', +new Date());
+  document.head.appendChild(s);
+}
 
 pages.qualifiche = function () {
   const Q = D.qualifiche || {}, list = Q.risultati || [];
@@ -248,6 +274,22 @@ pages.qualifiche = function () {
   return warnBox() + head('Qualifiche mondiale', intro) + meta +
     '<div class="tw"><table><thead><tr><th>Pos</th><th>Pilota</th><th>Tempo</th><th class="l">Scuderia</th><th class="l">Compagno</th></tr></thead><tbody>' + body + '</tbody></table></div>' +
     (Q.nota ? '<p class="note">' + esc(Q.nota) + '</p>' : '');
+};
+
+pages.giornale = function (sel) {
+  const G = (D.giornale || []).slice().sort((a, b) => a.n - b.n);
+  const intro = 'Il quotidiano ufficiale del campionato mondiale Apex Drawn.';
+  if (!G.length) return head('Safe Sport', intro) + '<div class="panel"><p class="empty">Il primo numero non è ancora uscito.</p></div>';
+  const cur = G.find(g => g.n === +sel) || G[G.length - 1];
+  const file = cur.file || 'giornale/safe-sport-' + cur.n + '.jpg';
+  const tabs = G.length > 1 ? '<nav class="tabs" aria-label="Numeri del giornale">' + G.map(g =>
+    '<a href="#/giornale/' + g.n + '"' + (g.n === cur.n ? ' aria-current="true"' : '') + '>N. ' + g.n + '</a>').join('') + '</nav>' : '';
+  const meta = '<div class="meta"><div><span>Numero</span><b>' + cur.n + '</b></div>' +
+    (cur.data ? '<div><span>Data</span><b>' + esc(fmtDate(cur.data)) + '</b></div>' : '') +
+    (cur.titolo ? '<div><span>In prima pagina</span><b>' + esc(cur.titolo) + '</b></div>' : '') + '</div>';
+  return head('Safe Sport', intro) + tabs + meta +
+    '<figure class="paper"><a href="' + esc(file) + '" target="_blank" rel="noopener"><img src="' + esc(file) + '" alt="Prima pagina del numero ' + cur.n + ' di Safe Sport" onerror="__imgFail(this)"></a></figure>' +
+    '<p class="note">Tocca l\'immagine per aprirla a grandezza intera.</p>';
 };
 
 pages['race-results'] = function (sel) {
@@ -270,7 +312,7 @@ pages['race-results'] = function (sel) {
     '<div><span>Data</span><b>' + esc(fmtDate(r.meta.data)) + '</b></div>' +
     '<div><span>Pole position</span><b>' + (r.pole ? esc(r.pole) : '-') + '</b></div>' +
     '<div><span>Giro veloce</span><b>' + (r.fl && r.fl.pilota ? esc(r.fl.pilota) + (r.fl.tempo ? ' ' + esc(r.fl.tempo) : '') : '-') + '</b></div></div>';
-  return warnBox() + head('Race results') + tabs + meta +
+  return warnBox() + head('Race results') + tabs + banner(n) + meta +
     '<div class="tw"><table><thead><tr><th>Pos</th><th>Pilota</th><th>Tempo</th><th class="tot">Punti</th>' + (hasGrid ? '<th>Griglia</th><th>+/-</th>' : '') + '</tr></thead><tbody>' + body + '</tbody></table></div>' +
     (hasGrid ? '<p class="note">+/- è il numero di posizioni guadagnate (+) o perse (-) rispetto alla griglia di partenza.</p>' : '');
 };
@@ -329,7 +371,7 @@ pages.regolamento = function () {
 
 /* ---------- router ---------- */
 const NAV = [['home', 'Home'], ['driver-standings', 'Driver Standings'], ['constructor-standings', 'Constructor Standings'], ['teams', 'Teams'], ['qualifiche', 'Qualifiche mondiale'],
-  ['race-results', 'Race Results'], ['statistics', 'Statistics'], ['calendar', 'Calendar'], ['regolamento', 'Regolamento']];
+  ['race-results', 'Race Results'], ['statistics', 'Statistics'], ['calendar', 'Calendar'], ['giornale', 'Giornale'], ['regolamento', 'Regolamento']];
 $('#nav').innerHTML = NAV.map(n => '<a href="#/' + n[0] + '" data-p="' + n[0] + '">' + n[1] + '</a>').join('');
 $('#foot').textContent = S.played ? 'Dati aggiornati dopo il GP ' + S.lastRound + '. Le classifiche si calcolano in automatico dai risultati.' : 'Nessun GP ancora disputato.';
 let first = true;
@@ -343,6 +385,7 @@ function render() {
   document.title = (page === 'home' ? 'Apex Drawn - Campionato mondiale' : NAV.find(n => n[0] === page)[1] + ' - Apex Drawn');
   if (!first) { window.scrollTo(0, 0); $('#app').focus({ preventScroll: true }); }
   first = false;
+  if (page === 'teams') loadComments();
 }
 window.addEventListener('hashchange', render);
 render();

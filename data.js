@@ -71,12 +71,12 @@ window.APEX = {
     risultati: [
       ["Nihholo",       "1:02,381"],
       ["Risorto",       "1:04,378"],
-      ["BatSciscio1",    "1:05,365"],
+      ["RobstregMN",    "1:05,365"],
       ["SaettaMcFabri", "1:05,444"],
-      ["RobstregMN",    "1:05,818"],
-      ["Giusmacher2",   "1:06,343"],
-      ["Jarjtodt81",   "1:08,078"],
-      ["Patabomber",    "1:08,081"]
+      ["Patabomber",    "1:05,818"],
+      ["BatSciscio1",   "1:06,343"],
+      ["Giusmacher2",   "1:08,078"],
+      ["Jarjtodt81",    "1:08,081"]
     ]
   },
 
@@ -87,12 +87,12 @@ window.APEX = {
       arrivo: [
         ["Nihholo",       "05:24,508"],
         ["Risorto",       "+10,955"],
-        ["RobstregMN",    "+12,784"],
+        ["BatSciscio1",    "+12,784"],
         ["SaettaMcFabri", "+14,176"],
-        ["Patabomber",    "+22,612"],
-        ["BatSciscio1",   "+26,089"],
-        ["Giusmacher2",   "+32,441"],
-        ["Jarjtodt81",    "+33,996"]
+        ["RobstregMN",    "+22,612"],
+        ["Giusmacher2",   "+26,089"],
+        ["Jarjtodt81",   "+32,441"],
+        ["Patabomber",    "+33,996"]
       ]
     },
     // 2: { arrivo: [ ... ] },   <- ogni GP finisce con una virgola

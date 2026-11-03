@@ -82,7 +82,7 @@ window.APEX = {
 
   risultati: {
     1: {
-      giroVeloce: Nihholo,     // esempio: { pilota: "Risorto", tempo: "1:03,412" }
+      giroVeloce: ,     // esempio: { pilota: "Risorto", tempo: "1:03,412" }
       pole: "Jarjtodt81",
       arrivo: [
         ["Nihholo",       "05:24,508"],

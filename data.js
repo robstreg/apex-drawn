@@ -67,12 +67,12 @@ window.APEX = {
       arrivo: [
         ["Nihholo",       "05:24,508"],
         ["Risorto",       "+10,955"],
-        ["RobstregMN",    "+12,784"],
+        ["BatSciscio1",    "+12,784"],
         ["SaettaMcFabri", "+14,176"],
-        ["Patabomber",    "+22,612"],
-        ["BatSciscio1",   "+26,089"],
-        ["Giusmacher2",   "+32,441"],
-        ["Jarjtodt81",    "+33,996"]
+        ["RobstregMN",    "+22,612"],
+        ["Giusmacher2",   "+26,089"],
+        ["Jarjtodt81",   "+32,441"],
+        ["Patabomber",    "+33,996"]
       ]
     },
     // 2: { arrivo: [ ... ] },   <- ogni GP finisce con una virgola

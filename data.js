@@ -18,7 +18,7 @@
 
 window.APEX = {
   nome: "APEX DRAWN",
-  sottotitolo: "Campionato mondiale",
+  sottotitolo: "Campionato mondiale Luca Bargellini",
 
   gare: 10,                 // numero di GP del campionato
   giriProve: 3,
@@ -48,7 +48,7 @@ window.APEX = {
 
   /* Calendario: completa circuito e data quando li decidi (lascia "" se non sono definiti). */
   calendario: [
-    { n: 1,  nome: "GP 1",  circuito: "Circuito 1", data: "" },
+    { n: 1,  nome: "GP 1",  circuito: "Circuito 1", data: "02/11/2026" },
     { n: 2,  nome: "GP 2",  circuito: "", data: "" },
     { n: 3,  nome: "GP 3",  circuito: "", data: "" },
     { n: 4,  nome: "GP 4",  circuito: "", data: "" },
@@ -82,7 +82,7 @@ window.APEX = {
 
   risultati: {
     1: {
-      giroVeloce: "" ,     // esempio: { pilota: "Risorto", tempo: "1:03,412" }
+      giroVeloce: "Nihholo" ,     // esempio: { pilota: "Risorto", tempo: "1:03,412" }
       pole: "Jarjtodt81",
       arrivo: [
         ["Nihholo",       "05:24,508"],

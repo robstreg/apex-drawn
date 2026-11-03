@@ -80,7 +80,7 @@ window.APEX = {
     ]
   },
  giornale: [
-    // { n: 1, data: "2026-11-02", titolo: "" },
+    // { n: 1, data: "2026-11-02", titolo: "Il grande inizio" },
   ],
 
   commenti: { url: "" },

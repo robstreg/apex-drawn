@@ -60,6 +60,26 @@ window.APEX = {
     { n: 10, nome: "GP 10", circuito: "", data: "" }
   ],
 
+  /* QUALIFICHE MONDIALE: le qualifiche che hanno formato le squadre.
+     Scrivi i piloti in ordine di classifica: ["Nickname", "tempo"]
+     (il tempo e' libero: "1:23,456", "+0,512" ... oppure lascia "" se non c'e').
+     "nota" e' facoltativa: puoi spiegare come sono nate le coppie. */
+  qualifiche: {
+    circuito: "",
+    data: "2026-10-28",
+    nota: "Qualifiche disputate prima dell'inizio del campionato per formare le squadre: il primo ha fatto coppia con l'ultimo, il secondo con il penultimo e così via.",
+    risultati: [
+      ["Nihholo",       "1:02,381"],
+      ["Risorto",       "1:04,378"],
+      ["RobstregMN",    "1:05,365"],
+      ["SaettaMcFabri", "1:05,444"],
+      ["Patabomber",    "1:05,818"],
+      ["BatSciscio1",   "1:06,343"],
+      ["Giusmacher2",   "1:08,078"],
+      ["Jarjtodt81",    "1:08,081"]
+    ]
+  },
+
   risultati: {
     1: {
       giroVeloce: null,     // esempio: { pilota: "Risorto", tempo: "1:03,412" }
@@ -67,12 +87,12 @@ window.APEX = {
       arrivo: [
         ["Nihholo",       "05:24,508"],
         ["Risorto",       "+10,955"],
-        ["BatSciscio1",    "+12,784"],
+        ["RobstregMN",    "+12,784"],
         ["SaettaMcFabri", "+14,176"],
-        ["RobstregMN",    "+22,612"],
-        ["Giusmacher2",   "+26,089"],
-        ["Jarjtodt81",   "+32,441"],
-        ["Patabomber",    "+33,996"]
+        ["Patabomber",    "+22,612"],
+        ["BatSciscio1",   "+26,089"],
+        ["Giusmacher2",   "+32,441"],
+        ["Jarjtodt81",    "+33,996"]
       ]
     },
     // 2: { arrivo: [ ... ] },   <- ogni GP finisce con una virgola
@@ -89,7 +109,12 @@ window.APEX = {
       "Ogni GP ha 3 giri di prove libere e 5 giri di gara."
     ]},
     { titolo: "Griglia di partenza", righe: [
-      "La griglia è inversa rispetto all'ordine di arrivo del GP precedente: chi arriva ultimo parte in pole."
+      "La griglia è inversa rispetto all'ordine di arrivo del GP precedente: chi arriva ultimo parte in pole.",
+      "Chi non partecipa a un GP parte ultimo nel GP successivo."
+    ]},
+    { titolo: "Formazione delle squadre", righe: [
+      "Le squadre sono nate dalle qualifiche mondiali, disputate prima dell'inizio del campionato.",
+      "Il primo classificato ha fatto coppia con l'ultimo, il secondo con il penultimo e così via."
     ]},
     { titolo: "Punti", punti: true, righe: [
       "Vanno a punti i primi 8 classificati."

@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Aggiungi un GP - Apex Drawn</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,600;0,700;1,800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+.tool label{display:block;font:600 15px var(--fd);text-transform:uppercase;color:var(--mut);margin:18px 0 6px}
+.tool textarea,.tool input,.tool select{width:100%;background:var(--p2);color:var(--tx);border:1px solid var(--line);padding:12px;font:500 16px var(--fb);border-radius:0}
+.tool textarea{min-height:220px;font:500 15px/1.5 ui-monospace,Menlo,Consolas,monospace}
+.tool .cols{display:grid;grid-template-columns:110px 1fr 1fr;gap:12px}
+@media (max-width:560px){.tool .cols{grid-template-columns:1fr}}
+.btn{font:700 19px var(--fd);text-transform:uppercase;background:var(--tx);color:var(--dark);border:0;padding:13px 26px;cursor:pointer;clip-path:var(--para);margin-top:14px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+pre.out{background:#0a0c10;border:1px solid var(--line);padding:16px;overflow-x:auto;font:500 14px/1.55 ui-monospace,Menlo,Consolas,monospace;white-space:pre;margin-top:8px}
+.msg{margin:6px 0;font-size:15px}.msg.err{color:#ff7a7a}.msg.ok{color:var(--green)}.msg.info{color:var(--mut)}
+ol.steps{padding-left:22px;margin:0 0 6px;max-width:64ch}
+ol.steps li{margin-bottom:8px}
+code{background:var(--p2);padding:1px 6px;font-size:14px}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap bar"><a class="brand" href="index.html" aria-label="Torna al sito"><b>Apex</b><i>Drawn</i></a></div>
+  <div class="strip" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+</header>
+<main class="wrap tool">
+  <h1 class="h1">Aggiungi un GP</h1>
+  <p class="lede">Incolla l'arrivo e ottieni il blocco pronto da incollare in <code>data.js</code>. Questa pagina non salva nulla: genera solo il testo.</p>
+
+  <section class="panel">
+    <ol class="steps">
+      <li>Scrivi il numero del GP e incolla l'arrivo: una riga per pilota, nickname e tempo, nell'ordine di arrivo.</li>
+      <li>Controlla i messaggi qui sotto: devono essere tutti verdi o grigi.</li>
+      <li>Premi "Copia blocco", apri <code>data.js</code> e incolla subito sotto la riga <code>},</code> dell'ultimo GP inserito.</li>
+      <li>Salva il file. Il sito si aggiorna da solo.</li>
+    </ol>
+
+    <div class="cols">
+      <div><label for="n">GP n.</label><input id="n" type="number" min="1" max="99"></div>
+      <div><label for="fp">Giro veloce, pilota (facoltativo)</label><select id="fp"><option value="">Nessuno</option></select></div>
+      <div><label for="ft">Giro veloce, tempo</label><input id="ft" placeholder="1:03,412"></div>
+    </div>
+
+    <label for="raw">Arrivo (una riga per pilota)</label>
+    <textarea id="raw" spellcheck="false" placeholder="Nihholo	05:24,508&#10;Risorto	+10,955&#10;RobstregMN	+12,784"></textarea>
+    <p class="note">Il primo ha il tempo totale di gara, gli altri il distacco. Per un ritiro scrivi <code>DNF</code> al posto del tempo. Chi non ha corso non va scritto.</p>
+
+    <div id="msgs" aria-live="polite" style="margin-top:14px"></div>
+    <pre class="out" id="out" aria-label="Blocco da incollare in data.js">Qui comparirà il blocco.</pre>
+    <button class="btn" id="copy" disabled>Copia blocco</button>
+    <span id="copied" class="msg ok" hidden>Copiato. Ora incollalo in data.js.</span>
+  </section>
+</main>
+<script src="data.js"></script>
+<script>
+(function () {
+  const D = window.APEX, $ = s => document.querySelector(s);
+  const nicks = D.piloti.map(p => p.nick);
+  const done = Object.keys(D.risultati).map(Number);
+  $('#n').value = (done.length ? Math.max.apply(null, done) : 0) + 1;
+  nicks.forEach(k => { const o = document.createElement('option'); o.value = k; o.textContent = k; $('#fp').appendChild(o); });
+
+  function findNick(raw) {
+    const l = raw.toLowerCase();
+    let m = D.piloti.find(p => p.nick.toLowerCase() === l);
+    if (m) return m.nick;
+    const near = D.piloti.filter(p => p.nick.toLowerCase().includes(l) || l.includes(p.nick.toLowerCase()));
+    return near.length === 1 ? near[0].nick : null;
+  }
+  function build() {
+    const msgs = [], rows = [], seen = new Set();
+    let err = false, sawDnf = false;
+    const lines = $('#raw').value.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+    lines.forEach((line, i) => {
+      const parts = line.split(/\s+/), nick = findNick(parts[0]);
+      let t = parts.slice(1).join(' ').replace(/\.(\d{3})$/, ',$1');
+      if (!nick) { msgs.push(['err', 'Riga ' + (i + 1) + ': "' + parts[0] + '" non è un pilota dell\'elenco.']); err = true; return; }
+      if (nick !== parts[0]) msgs.push(['info', 'Riga ' + (i + 1) + ': "' + parts[0] + '" corretto in ' + nick + '.']);
+      if (seen.has(nick)) { msgs.push(['err', nick + ' compare due volte.']); err = true; return; }
+      seen.add(nick);
+      if (/^(dnf|rit\.?|ritirato)$/i.test(t)) {
+        if (i === 0) { msgs.push(['err', 'Il primo classificato non può essere DNF.']); err = true; return; }
+        rows.push([nick, '', 'DNF']); sawDnf = true; return;
+      }
+      if (sawDnf) msgs.push(['err', nick + ' è dopo un DNF: i ritirati vanno in fondo.']), err = true;
+      if (!t) { msgs.push(['err', nick + ': manca il tempo.']); err = true; return; }
+      if (i > 0 && !t.startsWith('+') && !t.includes(':')) t = '+' + t;
+      rows.push([nick, t]);
+    });
+    const n = +$('#n').value;
+    if (!n) { msgs.push(['err', 'Scrivi il numero del GP.']); err = true; }
+    if (n > (D.gare || 10)) { msgs.push(['err', 'Il campionato ha ' + (D.gare || 10) + ' GP.']); err = true; }
+    if (done.includes(n)) msgs.push(['err', 'Il GP ' + n + ' è già presente in data.js: se lo incolli avrai due blocchi con lo stesso numero.']), err = true;
+    if (rows.length && rows.length < 2) { msgs.push(['info', 'Per ora un solo pilota.']); }
+    const absent = nicks.filter(k => !seen.has(k));
+    if (rows.length && absent.length) msgs.push(['info', 'Assenti (0 punti): ' + absent.join(', ') + '.']);
+    if (rows.length && !err) msgs.push(['ok', rows.length + ' piloti, tutto in regola.']);
+    const ft = $('#ft').value.trim(), fp = $('#fp').value;
+    const fl = fp ? '{ pilota: "' + fp + '", tempo: "' + ft.replace(/"/g, '') + '" }' : 'null';
+    const text = rows.length ? '    ' + n + ': {\n      giroVeloce: ' + fl + ',\n      arrivo: [\n' +
+      rows.map((r, i) => '        [' + r.map(x => JSON.stringify(x)).join(', ') + ']' + (i < rows.length - 1 ? ',' : '')).join('\n') + '\n      ]\n    },' : '';
+    $('#msgs').innerHTML = msgs.map(m => '<p class="msg ' + m[0] + '">' + m[1].replace(/</g, '&lt;') + '</p>').join('');
+    $('#out').textContent = text || 'Qui comparirà il blocco.';
+    $('#copy').disabled = !text || err;
+    $('#copied').hidden = true;
+    return text;
+  }
+  ['input', 'change'].forEach(e => document.addEventListener(e, ev => { if (ev.target.closest('.tool')) build(); }));
+  $('#copy').addEventListener('click', () => {
+    const text = $('#out').textContent, ok = () => { $('#copied').hidden = false; };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(ok, fallback); else fallback();
+    function fallback() {
+      const r = document.createRange(); r.selectNodeContents($('#out'));
+      const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      try { document.execCommand('copy'); ok(); } catch (e) {}
+    }
+  });
+  build();
+})();
+</script>
+</body>
+</html>

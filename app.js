@@ -42,6 +42,9 @@ function compute() {
   rounds.forEach(n => {
     const r = D.risultati[n];
     const order = r.arrivo.map(e => e[0]);
+    if (n > TOTAL) warns.push('GP ' + n + ': il campionato ha ' + TOTAL + ' GP, controlla il numero.');
+    if (new Set(order).size !== order.length) warns.push('GP ' + n + ': un pilota compare due volte nell\'arrivo.');
+    if (!String(r.arrivo[0][1] || '').trim()) warns.push('GP ' + n + ': il vincitore deve avere il tempo di gara totale.');
     order.forEach(k => { if (!drv(k)) warns.push('GP ' + n + ': il pilota "' + k + '" non esiste nell\'elenco piloti (controlla il nickname).'); });
     const grid = prev ? reverseGrid(prev).filter(k => order.includes(k)) : null;
     const winT = parseT(r.arrivo[0][1]);
@@ -60,6 +63,7 @@ function compute() {
       rows, grid, pole: r.pole || (grid ? grid[0] : null), fl: r.giroVeloce || null };
     prev = order;
   });
+  ((D.qualifiche && D.qualifiche.risultati) || []).forEach(e => { if (!drv(e[0])) warns.push('Qualifiche: il pilota "' + e[0] + '" non esiste nell\'elenco piloti.'); });
   const played = rounds.length;
   const lastRound = played ? rounds[played - 1] : 0;
   const nextRound = lastRound < TOTAL ? lastRound + 1 : null;
@@ -228,6 +232,24 @@ pages.teams = function () {
   ).join('') + '</div>';
 };
 
+pages.qualifiche = function () {
+  const Q = D.qualifiche || {}, list = Q.risultati || [];
+  const intro = 'Le qualifiche disputate prima del campionato, da cui sono nate le quattro scuderie.';
+  if (!list.length) return warnBox() + head('Qualifiche mondiale', intro) + '<div class="panel"><p class="empty">I risultati delle qualifiche non sono ancora stati inseriti.</p></div>';
+  const meta = (Q.circuito || Q.data) ? '<div class="meta">' +
+    (Q.circuito ? '<div><span>Circuito</span><b>' + esc(Q.circuito) + '</b></div>' : '') +
+    (Q.data ? '<div><span>Data</span><b>' + esc(fmtDate(Q.data)) + '</b></div>' : '') + '</div>' : '';
+  const body = list.map((e, i) => {
+    const t = team((drv(e[0]) || {}).squadra);
+    const mate = D.piloti.find(p => p.squadra === t.id && p.nick !== e[0]);
+    return '<tr style="--c:' + t.colore + '"><td>' + (i + 1) + '</td><td><span class="who">' + esc(e[0]) + '</span></td><td>' + esc(e[1] || '-') + '</td>' +
+      '<td class="tm"><span class="tmw">' + logo(t, 28) + esc(t.nome) + '</span></td><td class="tm"><span class="who">' + esc(mate ? mate.nick : '-') + '</span></td></tr>';
+  }).join('');
+  return warnBox() + head('Qualifiche mondiale', intro) + meta +
+    '<div class="tw"><table><thead><tr><th>Pos</th><th>Pilota</th><th>Tempo</th><th class="l">Scuderia</th><th class="l">Compagno</th></tr></thead><tbody>' + body + '</tbody></table></div>' +
+    (Q.nota ? '<p class="note">' + esc(Q.nota) + '</p>' : '');
+};
+
 pages['race-results'] = function (sel) {
   let n = +sel; if (!S.rounds.includes(n)) n = S.lastRound;
   const tabs = '<nav class="tabs" aria-label="Gran Premi">' + Array.from({ length: TOTAL }, (_, i) => {
@@ -306,7 +328,7 @@ pages.regolamento = function () {
 };
 
 /* ---------- router ---------- */
-const NAV = [['home', 'Home'], ['driver-standings', 'Driver Standings'], ['constructor-standings', 'Constructor Standings'], ['teams', 'Teams'],
+const NAV = [['home', 'Home'], ['driver-standings', 'Driver Standings'], ['constructor-standings', 'Constructor Standings'], ['teams', 'Teams'], ['qualifiche', 'Qualifiche mondiale'],
   ['race-results', 'Race Results'], ['statistics', 'Statistics'], ['calendar', 'Calendar'], ['regolamento', 'Regolamento']];
 $('#nav').innerHTML = NAV.map(n => '<a href="#/' + n[0] + '" data-p="' + n[0] + '">' + n[1] + '</a>').join('');
 $('#foot').textContent = S.played ? 'Dati aggiornati dopo il GP ' + S.lastRound + '. Le classifiche si calcolano in automatico dai risultati.' : 'Nessun GP ancora disputato.';

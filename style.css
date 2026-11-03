@@ -201,3 +201,22 @@ main:focus{outline:none}
 
 :root{color-scheme:dark}
 .comments .panel{clip-path:none;padding:16px;min-height:120px}
+
+/* commenti */
+.cform label{display:block;font:600 15px var(--fd);text-transform:uppercase;color:var(--mut);margin:12px 0 5px}
+.cform input,.cform select,.cform textarea{width:100%;background:var(--p2);color:var(--tx);border:1px solid var(--line);padding:11px 12px;font:500 16px var(--fb);border-radius:0}
+.cform textarea{resize:vertical;min-height:84px}
+.crow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:520px){.crow{grid-template-columns:1fr}}
+.cact{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:14px}
+.cact .btn{margin:0}
+.btn{font:700 19px var(--fd);text-transform:uppercase;background:var(--tx);color:var(--dark);border:0;padding:13px 26px;cursor:pointer;clip-path:var(--para)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.cstat{font-size:15px;color:var(--mut)}.cstat.bad{color:#ff7a7a}
+#clist{margin-top:22px;display:grid;gap:6px}
+.cmt{background:var(--p2);border-left:6px solid var(--c);padding:12px 16px}
+.chead{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 12px}
+.chead b{font:700 20px var(--fd);text-transform:uppercase}
+.ctag{font:600 14px var(--fd);text-transform:uppercase;color:var(--c)}
+.chead time{color:var(--mut);font-size:13px;margin-left:auto}
+.cmt p{margin-top:4px;white-space:pre-wrap;overflow-wrap:anywhere;max-width:70ch}

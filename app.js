@@ -241,21 +241,56 @@ pages.teams = function () {
   ).join('') + '</div>' + commentsBox();
 };
 
-/* commenti (Disqus): compaiono solo se in data.js c'è lo shortname */
-function discusName() { const s = D.commenti && D.commenti.disqus; return s && /^[a-z0-9-]+$/i.test(s) ? s : ''; }
+/* commenti: salvati in un Foglio Google tramite uno script (vedi README) */
+const CK = 'apex_comment_user', CT = 'apex_comment_time';
+function cUrl() { const u = D.commenti && D.commenti.url; return /^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(u || '') ? u : ''; }
+function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
 function commentsBox() {
-  return discusName() ? '<section class="sec comments" aria-label="Commenti"><h2 class="h2">Commenti</h2><div class="panel"><div id="disqus_thread"></div></div></section>' : '';
+  if (!cUrl()) return '';
+  return '<section class="sec comments" aria-label="Commenti"><h2 class="h2">Commenti</h2><div class="panel">' +
+    '<form id="cform" class="cform" autocomplete="off">' +
+    '<div class="crow"><div><label for="cn">Nome</label><input id="cn" maxlength="24" required></div>' +
+    '<div><label for="cs">Riguarda</label><select id="cs"><option value="">Tutte le squadre</option>' + D.squadre.map(t => '<option>' + esc(t.nome) + '</option>').join('') + '</select></div></div>' +
+    '<label for="cm">Messaggio</label><textarea id="cm" maxlength="280" rows="3" required></textarea>' +
+    '<input id="csito" name="sito" tabindex="-1" aria-hidden="true" autocomplete="off" style="position:absolute;left:-9999px;width:1px;height:1px">' +
+    '<div class="cact"><button class="btn" type="submit" id="cbtn">Pubblica commento</button><span id="cmsg" class="cstat" role="status"></span></div></form>' +
+    '<div id="clist" aria-live="polite"><p class="empty">Carico i commenti...</p></div></div></section>';
+}
+function renderComments(list) {
+  const box = $('#clist'); if (!box) return;
+  if (!list.length) { box.innerHTML = '<p class="empty">Nessun commento per ora. Scrivi il primo.</p>'; return; }
+  box.innerHTML = list.map(c => {
+    const t = D.squadre.find(x => x.nome === c.squadra);
+    const when = c.t ? new Date(c.t).toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+    return '<article class="cmt" style="--c:' + (t ? t.colore : 'var(--line)') + '"><div class="chead"><b>' + esc(c.nome) + '</b>' +
+      (t ? '<span class="ctag">' + esc(t.nome) + '</span>' : '') + (when ? '<time>' + esc(when) + '</time>' : '') + '</div><p>' + esc(c.msg) + '</p></article>';
+  }).join('');
+}
+function fetchComments() {
+  return fetch(cUrl()).then(r => r.json()).then(list => { renderComments(Array.isArray(list) ? list : []); })
+    .catch(() => { const b = $('#clist'); if (b) b.innerHTML = '<p class="empty">Non riesco a caricare i commenti. Riprova tra poco.</p>'; });
 }
 function loadComments() {
-  const sn = discusName();
-  if (!sn || !document.getElementById('disqus_thread')) return;
-  const url = location.href.split('#')[0] + '#/teams';
-  const cfg = function () { this.page.url = url; this.page.identifier = 'apex-drawn-teams'; };
-  if (window.DISQUS) { window.DISQUS.reset({ reload: true, config: cfg }); return; }
-  window.disqus_config = cfg;
-  const s = document.createElement('script');
-  s.src = 'https://' + sn + '.disqus.com/embed.js'; s.async = true; s.setAttribute('data-timestamp', +new Date());
-  document.head.appendChild(s);
+  const f = $('#cform'); if (!f) return;
+  const saved = store(CK); if (saved) $('#cn').value = saved;
+  const say = (t, bad) => { const m = $('#cmsg'); m.textContent = t; m.className = 'cstat' + (bad ? ' bad' : ''); };
+  f.addEventListener('submit', ev => {
+    ev.preventDefault();
+    const nome = $('#cn').value.trim(), msg = $('#cm').value.trim(), sq = $('#cs').value;
+    if (!nome || !msg) { say('Scrivi nome e messaggio.', true); return; }
+    if (/https?:\/\/|www\./i.test(nome + ' ' + msg)) { say('I link non sono ammessi nei commenti.', true); return; }
+    const last = +store(CT) || 0, wait = Math.ceil((last + 30000 - Date.now()) / 1000);
+    if (wait > 0) { say('Aspetta ancora ' + wait + ' secondi prima di scrivere un altro commento.', true); return; }
+    const btn = $('#cbtn'); btn.disabled = true; say('Invio in corso...');
+    fetch(cUrl(), { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ nome, msg, squadra: sq, sito: $('#csito').value }) })
+      .then(r => r.json()).then(r => {
+        if (!r.ok) throw new Error(r.errore || 'errore');
+        store(CK, nome); store(CT, String(Date.now())); $('#cm').value = ''; say('Commento pubblicato.'); return fetchComments();
+      }).catch(() => say('Non sono riuscito a pubblicare il commento. Riprova.', true))
+      .then(() => { btn.disabled = false; });
+  });
+  fetchComments();
 }
 
 pages.qualifiche = function () {

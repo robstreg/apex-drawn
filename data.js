@@ -83,7 +83,7 @@ window.APEX = {
     // { n: 1, data: "2026-11-02", titolo: "" },
   ],
 
-  commenti: { disqus: "" },
+  commenti: { url: "" },
   risultati: {
     1: {
      giroVeloce: { pilota: "Nihholo", tempo: "na" },     // esempio: { pilota: "Risorto", tempo: "1:03,412" }

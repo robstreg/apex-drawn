@@ -117,6 +117,7 @@ musica: { file: "", titolo: "" },
   },
     3: {
       giroVeloce: { pilota: "Nihholo", tempo: "1:24,853" },
+      pole: "Patabomber",
       arrivo: [
         ["Nihholo", "7:17,361"],
         ["Risorto", "+7,124"],

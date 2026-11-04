@@ -80,11 +80,12 @@ window.APEX = {
     ]
   },
  giornale: [
+     { n: 1, data: "2026-11-02", titolo: "Il grande inizio" },
     // { n: 1, data: "2026-11-02", titolo: "Il grande inizio" },
   ],
  
   commenti: { url: "" },
-musica: { file: "", titolo: "" },
+musica: { file: "Placebo-Every Me Every You.mp3", titolo: "Placebo-Every Me Every You" },
   risultati: {
     1: {
      giroVeloce: { pilota: "Nihholo", tempo: "na" },     // esempio: { pilota: "Risorto", tempo: "1:03,412" }

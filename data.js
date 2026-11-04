@@ -84,6 +84,7 @@ window.APEX = {
   ],
 
   commenti: { url: "" },
+   musica: { file: "", titolo: "" },
   risultati: {
     1: {
      giroVeloce: { pilota: "Nihholo", tempo: "na" },     // esempio: { pilota: "Risorto", tempo: "1:03,412" }

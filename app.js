@@ -114,13 +114,23 @@ function compute() {
 const S = compute();
 
 /* ---------- componenti ---------- */
-function gpFoto(n) { const c = D.calendario.find(x => x.n === n) || {}; return c.foto || 'foto/gp-' + n + '.jpg'; }
-function banner(n) {
-  return '<figure class="banner"><img src="' + esc(gpFoto(n)) + '" alt="Foto del GP ' + n + '" loading="lazy" onerror="this.parentNode.remove()"></figure>';
+const VERSION = '2026-11-04';
+const EXTS = ['jpg', 'JPG', 'jpeg', 'JPEG', 'png', 'PNG', 'webp'];
+function cands(base, explicit) { return explicit ? [explicit] : EXTS.map(e => base + '.' + e); }
+function gpFoto(n) { const c = D.calendario.find(x => x.n === n) || {}; return cands('foto/gp-' + n, c.foto); }
+function imgTag(list, alt, kind) {
+  return '<img src="' + esc(list[0]) + '" data-c="' + esc(JSON.stringify(list)) + '" data-i="0" data-k="' + kind + '" alt="' + esc(alt) + '"' +
+    (kind === 'banner' ? ' loading="lazy"' : '') + ' onload="__ld(this)" onerror="__try(this)">';
 }
-window.__imgFail = img => {
+function banner(n) { return '<figure class="banner">' + imgTag(gpFoto(n), 'Foto del GP ' + n, 'banner') + '</figure>'; }
+window.__ld = img => { const a = img.parentNode; if (a && a.tagName === 'A') a.href = img.src; };
+window.__try = img => {
+  const l = JSON.parse(img.dataset.c), i = +img.dataset.i + 1;
+  if (i < l.length) { img.dataset.i = i; img.src = l[i]; return; }
+  if (img.dataset.k === 'banner') { img.closest('figure').remove(); return; }
   const p = document.createElement('p'); p.className = 'empty';
-  p.textContent = 'Immagine non trovata: controlla che il file ' + img.getAttribute('src') + ' sia nella cartella giusta e che il nome sia identico.';
+  p.textContent = 'Non trovo l\'immagine ' + l[0] + (l.length > 1 ? ' (ho provato anche .JPG, .jpeg, .png e .webp)' : '') +
+    '. Controlla che il file sia nella cartella giusta e che il nome sia identico, maiuscole comprese. Per un controllo completo apri la pagina #/diagnosi.';
   img.parentNode.replaceWith(p);
 };
 function logo(t, size) {
@@ -316,14 +326,14 @@ pages.giornale = function (sel) {
   const intro = 'Il quotidiano ufficiale del campionato mondiale Apex Drawn.';
   if (!G.length) return head('Safe Sport', intro) + '<div class="panel"><p class="empty">Il primo numero non è ancora uscito.</p></div>';
   const cur = G.find(g => g.n === +sel) || G[G.length - 1];
-  const file = cur.file || 'giornale/safe-sport-' + cur.n + '.jpg';
+  const list = cands('giornale/safe-sport-' + cur.n, cur.file);
   const tabs = G.length > 1 ? '<nav class="tabs" aria-label="Numeri del giornale">' + G.map(g =>
     '<a href="#/giornale/' + g.n + '"' + (g.n === cur.n ? ' aria-current="true"' : '') + '>N. ' + g.n + '</a>').join('') + '</nav>' : '';
   const meta = '<div class="meta"><div><span>Numero</span><b>' + cur.n + '</b></div>' +
     (cur.data ? '<div><span>Data</span><b>' + esc(fmtDate(cur.data)) + '</b></div>' : '') +
     (cur.titolo ? '<div><span>In prima pagina</span><b>' + esc(cur.titolo) + '</b></div>' : '') + '</div>';
   return head('Safe Sport', intro) + tabs + meta +
-    '<figure class="paper"><a href="' + esc(file) + '" target="_blank" rel="noopener"><img src="' + esc(file) + '" alt="Prima pagina del numero ' + cur.n + ' di Safe Sport" onerror="__imgFail(this)"></a></figure>' +
+    '<figure class="paper"><a href="' + esc(list[0]) + '" target="_blank" rel="noopener">' + imgTag(list, 'Prima pagina del numero ' + cur.n + ' di Safe Sport', 'paper') + '</a></figure>' +
     '<p class="note">Tocca l\'immagine per aprirla a grandezza intera.</p>';
 };
 
@@ -398,6 +408,52 @@ pages.calendar = function () {
   return warnBox() + head('Calendar', TOTAL + ' Gran Premi. Il nome di un GP disputato apre il risultato.') + '<div class="cal">' + items.join('') + '</div>' + grid;
 };
 
+pages.diagnosi = function () {
+  return head('Diagnosi del sito', 'Controllo automatico di dati, giornale, foto, commenti e musica. Questa pagina non è nel menu.') +
+    '<div class="dg" id="dg"><p class="empty">Controllo in corso...</p></div>';
+};
+function probeImg(list) {
+  return list.reduce((p, u) => p.then(found => found || new Promise(res => { const im = new Image(); im.onload = () => res(u); im.onerror = () => res(null); im.src = u; })), Promise.resolve(null));
+}
+async function runDiag() {
+  const box = $('#dg'); if (!box) return;
+  const rows = [], NAMES = { ok: 'Ok', bad: 'Problema', info: 'Nota' };
+  const add = (st, t, x) => { rows.push([st, t, x]); box.innerHTML = rows.map(r => '<div class="dgr ' + r[0] + '"><span class="dgs">' + NAMES[r[0]] + '</span><div><b>' + esc(r[1]) + '</b><p>' + esc(r[2]) + '</p></div></div>').join(''); };
+  add('info', 'Versione del sito', 'app.js versione ' + VERSION + '. Se non è quella dell\'ultimo zip che ti ho mandato, il file app.js non è stato sostituito, oppure la pagina è in cache: ricarica forzando (Ctrl+F5; su telefono chiudi e riapri il browser).');
+  add(S.warns.length ? 'bad' : 'ok', 'Risultati in data.js', S.played + ' GP inseriti su ' + TOTAL + '.' + (S.warns.length ? ' Problemi: ' + S.warns.join(' ') : ' Nessun errore nei nickname o nei tempi.'));
+
+  if (!Array.isArray(D.giornale)) add('bad', 'Giornale', 'Nel data.js manca il blocco "giornale: [ ... ]". Probabilmente il data.js è di una versione precedente: incolla il blocco sopra la riga "risultati: {".');
+  else if (!D.giornale.length) add('info', 'Giornale', 'Il blocco giornale è vuoto, quindi la pagina dice che il primo numero non è uscito. Attenzione: le righe che iniziano con // sono commenti e vengono ignorate. Togli le due barre e scrivi ad esempio: { n: 1, data: "2026-11-02", titolo: "Titolo" },');
+  else for (const g of D.giornale) {
+    const list = cands('giornale/safe-sport-' + g.n, g.file), f = await probeImg(list);
+    if (f) add('ok', 'Giornale numero ' + g.n, 'Trovato il file ' + f + '.');
+    else add('bad', 'Giornale numero ' + g.n, 'Non trovo il file ' + list[0] + (list.length > 1 ? ' (provato anche ' + list.slice(1).join(', ') + ')' : '') + '. Il file deve essere nella cartella "giornale" del sito, con questo nome e il numero uguale a n: ' + g.n + '.');
+  }
+
+  const fotos = [];
+  for (const n of S.rounds) { const l = gpFoto(n), f = await probeImg(l); if (f) fotos.push('GP ' + n + ': ' + f); }
+  add('info', 'Foto dei GP', fotos.length ? 'Trovate: ' + fotos.join('; ') + '.' : 'Nessuna foto trovata (è facoltativo). Per aggiungerle: foto/gp-1.jpg, foto/gp-2.jpg...');
+
+  const cm = D.commenti;
+  if (!cm) add('bad', 'Commenti', 'Nel data.js manca il blocco "commenti: { url: "" },". Probabilmente il data.js è di una versione precedente.');
+  else if (!cm.url) add('info', 'Commenti', 'Non configurati: "url" è vuoto in data.js, quindi la sezione resta nascosta nella pagina Teams.' + (cm.disqus !== undefined ? ' Hai ancora il vecchio campo "disqus": sostituiscilo con url, come nel README.' : ' Per attivarli segui la sezione Commenti del README.'));
+  else if (!cUrl()) add('bad', 'Commenti', 'L\'indirizzo in data.js non ha il formato giusto. Deve essere https://script.google.com/macros/s/.../exec e finire con /exec. Hai scritto: ' + cm.url);
+  else {
+    try {
+      const r = await fetch(cm.url), t = await r.text(); let x = null; try { x = JSON.parse(t); } catch (e) {}
+      if (Array.isArray(x)) add('ok', 'Commenti', 'Lo script Google risponde correttamente (' + x.length + ' commenti nel foglio).');
+      else add('bad', 'Commenti', 'Lo script ha risposto, ma non con i commenti. Di solito il deployment non è impostato su "Chi ha accesso: Chiunque", oppure l\'indirizzo è di una versione vecchia del deployment.');
+    } catch (e) { add('bad', 'Commenti', 'Non riesco a contattare lo script. Controlla l\'indirizzo e che il deployment sia "App web" con accesso "Chiunque".'); }
+  }
+
+  const ms = D.musica;
+  if (!ms || !ms.file) add('info', 'Musica', 'Non configurata (facoltativa). Vedi il README, sezione Musica.');
+  else {
+    const ok = await new Promise(res => { const a = new Audio(); a.preload = 'metadata'; a.onloadedmetadata = () => res(true); a.onerror = () => res(false); setTimeout(() => res(false), 8000); a.src = ms.file; });
+    add(ok ? 'ok' : 'bad', 'Musica', ok ? 'Il file ' + ms.file + ' si carica. Il pulsante Musica compare in basso a destra.' : 'Non riesco a caricare ' + ms.file + '. Controlla che il file sia nella cartella "musica" e che il nome sia identico.');
+  }
+}
+
 pages.regolamento = function () {
   return head('Regolamento') + '<div class="rules">' + D.regolamento.map(s =>
     '<section class="panel"><h3>' + esc(s.titolo) + '</h3>' + s.righe.map(l => '<p>' + esc(l) + '</p>').join('') +
@@ -409,20 +465,38 @@ const NAV = [['home', 'Home'], ['driver-standings', 'Driver Standings'], ['const
   ['race-results', 'Race Results'], ['statistics', 'Statistics'], ['calendar', 'Calendar'], ['giornale', 'Giornale'], ['regolamento', 'Regolamento']];
 $('#nav').innerHTML = NAV.map(n => '<a href="#/' + n[0] + '" data-p="' + n[0] + '">' + n[1] + '</a>').join('');
 $('#foot').textContent = S.played ? 'Dati aggiornati dopo il GP ' + S.lastRound + '. Le classifiche si calcolano in automatico dai risultati.' : 'Nessun GP ancora disputato.';
+$('#foot').textContent += ' Versione del sito: ' + VERSION + '.';
 let first = true;
 function render() {
   const parts = location.hash.replace(/^#\/?/, '').split('/');
-  const page = NAV.some(n => n[0] === parts[0]) ? parts[0] : 'home';
+  const page = (NAV.some(n => n[0] === parts[0]) || parts[0] === 'diagnosi') ? parts[0] : 'home';
   $('#app').innerHTML = pages[page](parts[1]);
   document.querySelectorAll('#nav a').forEach(a => {
     if (a.dataset.p === page) { a.setAttribute('aria-current', 'page'); a.scrollIntoView({ block: 'nearest', inline: 'center' }); } else a.removeAttribute('aria-current');
   });
-  document.title = (page === 'home' ? 'Apex Drawn - Campionato mondiale' : NAV.find(n => n[0] === page)[1] + ' - Apex Drawn');
+  document.title = (page === 'home' ? 'Apex Drawn - Campionato mondiale' : (page === 'diagnosi' ? 'Diagnosi' : NAV.find(n => n[0] === page)[1]) + ' - Apex Drawn');
   if (!first) { window.scrollTo(0, 0); $('#app').focus({ preventScroll: true }); }
   first = false;
   if (page === 'teams') loadComments();
+  if (page === 'diagnosi') runDiag();
+}
+function initMusic() {
+  const m = D.musica, f = m && m.file;
+  if (!f || !/^(https:\/\/\S+|[\w][\w\-./]*)$/.test(f)) return;
+  const a = document.createElement('audio'); a.id = 'musAudio'; a.loop = true; a.preload = 'none'; a.volume = 0.4; a.hidden = true; a.src = f;
+  const b = document.createElement('button'); b.id = 'mus'; b.type = 'button'; b.className = 'mus'; b.setAttribute('aria-pressed', 'false');
+  b.title = m.titolo ? 'Sottofondo: ' + m.titolo : 'Musica di sottofondo';
+  const set = (on, t) => { b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); b.innerHTML = '<span class="eq" aria-hidden="true"><i></i><i></i><i></i></span><span>' + t + '</span>'; };
+  set(false, 'Musica');
+  b.addEventListener('click', () => {
+    if (a.paused) a.play().then(() => set(true, 'Musica on')).catch(() => set(false, 'Brano non trovato'));
+    else { a.pause(); set(false, 'Musica'); }
+  });
+  a.addEventListener('error', () => set(false, 'Brano non trovato'));
+  document.body.append(a, b); document.body.classList.add('has-music');
 }
 window.addEventListener('hashchange', render);
 render();
+initMusic();
 window.__APEX_STATE = S;
 })();

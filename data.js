@@ -82,9 +82,9 @@ window.APEX = {
  giornale: [
     // { n: 1, data: "2026-11-02", titolo: "Il grande inizio" },
   ],
-
+ 
   commenti: { url: "" },
-   musica: { file: "", titolo: "" },
+musica: { file: "", titolo: "" },
   risultati: {
     1: {
      giroVeloce: { pilota: "Nihholo", tempo: "na" },     // esempio: { pilota: "Risorto", tempo: "1:03,412" }
@@ -120,7 +120,7 @@ window.APEX = {
      Esempio: { pilota: "Risorto", punti: 2, motivo: "GP 3, contatto in curva 4" }
      I punti si tolgono dal pilota e dalla sua squadra. */
   penalita: [],
-
+  
   regolamento: [
     { titolo: "Formato", righe: [
       "Il campionato si corre su 10 Gran Premi.",

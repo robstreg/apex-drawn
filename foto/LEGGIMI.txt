@@ -1,0 +1,2 @@
+Metti qui la foto di ogni GP chiamandola gp-1.jpg, gp-2.jpg, gp-3.jpg ... (nome tutto minuscolo, senza spazi).
+Compare da sola in cima alla pagina Race Results di quel GP e sulla Home. Se manca, il sito non mostra nulla.

@@ -114,8 +114,7 @@ musica: { file: "", titolo: "" },
         ["Patabomber", "+38,894"]
       ]
     },// 2: { arrivo: [ ... ] },   <- ogni GP finisce con una virgola
-  },
-    3: {
+  3: {
       giroVeloce: { pilota: "Nihholo", tempo: "1:24,853" },
       pole: "Patabomber",
       arrivo: [
@@ -129,6 +128,8 @@ musica: { file: "", titolo: "" },
         ["Giusmacher2", "+30,525"]
       ]
     },
+  },
+    
   /* Penalità (decurtazione di punti in classifica), facoltativo.
      Esempio: { pilota: "Risorto", punti: 2, motivo: "GP 3, contatto in curva 4" }
      I punti si tolgono dal pilota e dalla sua squadra. */

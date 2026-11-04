@@ -86,7 +86,7 @@ window.APEX = {
   ],
  
   commenti: { url: "" },
-musica: { file: "Placebo-Every Me Every You.mp3", titolo: "Placebo-Every Me Every You" },
+musica: { file: "musica/Placebo-Every Me Every You.mp3", titolo: "Placebo-Every Me Every You" },
   risultati: {
     1: {
      giroVeloce: { pilota: "Nihholo", tempo: "na" },     // esempio: { pilota: "Risorto", tempo: "1:03,412" }

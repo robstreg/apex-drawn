@@ -115,7 +115,19 @@ musica: { file: "", titolo: "" },
       ]
     },// 2: { arrivo: [ ... ] },   <- ogni GP finisce con una virgola
   },
-
+    3: {
+      giroVeloce: { pilota: "Nihholo", tempo: "1:24,853" },
+      arrivo: [
+        ["Nihholo", "7:17,361"],
+        ["Risorto", "+7,124"],
+        ["BatSciscio1", "+11,149"],
+        ["RobstregMN", "+15,580"],
+        ["Patabomber", "+20,415"],
+        ["SaettaMcFabri", "+22,220"],
+        ["Jarjtodt81", "+28,681"],
+        ["Giusmacher2", "+30,525"]
+      ]
+    },
   /* Penalità (decurtazione di punti in classifica), facoltativo.
      Esempio: { pilota: "Risorto", punti: 2, motivo: "GP 3, contatto in curva 4" }
      I punti si tolgono dal pilota e dalla sua squadra. */

@@ -114,7 +114,7 @@ function compute() {
 const S = compute();
 
 /* ---------- componenti ---------- */
-const VERSION = '2026-11-04';
+const VERSION = '2026-11-05';
 const EXTS = ['jpg', 'JPG', 'jpeg', 'JPEG', 'png', 'PNG', 'webp'];
 function cands(base, explicit) { return explicit ? [explicit] : EXTS.map(e => base + '.' + e); }
 function gpFoto(n) { const c = D.calendario.find(x => x.n === n) || {}; return cands('foto/gp-' + n, c.foto); }
@@ -446,11 +446,13 @@ async function runDiag() {
     } catch (e) { add('bad', 'Commenti', 'Non riesco a contattare lo script. Controlla l\'indirizzo e che il deployment sia "App web" con accesso "Chiunque".'); }
   }
 
-  const ms = D.musica;
-  if (!ms || !ms.file) add('info', 'Musica', 'Non configurata (facoltativa). Vedi il README, sezione Musica.');
+  const ms = D.musica, src = musicSrc();
+  if (!ms) add('bad', 'Musica', 'Nel data.js non trovo il blocco "musica: { file: "...", titolo: "..." },". Controlla che la riga sia scritta fuori da altri blocchi, subito sopra "risultati: {", con la virgola finale. Se hai appena salvato, aspetta 1-2 minuti e ricarica forzando.');
+  else if (!String(ms.file || '').trim()) add('info', 'Musica', 'Il blocco musica c\'e\', ma "file" e\' vuoto, quindi il pulsante non compare. Scrivi ad esempio: musica: { file: "musica/sottofondo.mp3", titolo: "Nome del brano" },');
+  else if (!src) add('bad', 'Musica', 'Il percorso "' + ms.file + '" non e\' valido. Usa un percorso come musica/sottofondo.mp3 oppure un indirizzo che inizia con https://.');
   else {
-    const ok = await new Promise(res => { const a = new Audio(); a.preload = 'metadata'; a.onloadedmetadata = () => res(true); a.onerror = () => res(false); setTimeout(() => res(false), 8000); a.src = ms.file; });
-    add(ok ? 'ok' : 'bad', 'Musica', ok ? 'Il file ' + ms.file + ' si carica. Il pulsante Musica compare in basso a destra.' : 'Non riesco a caricare ' + ms.file + '. Controlla che il file sia nella cartella "musica" e che il nome sia identico.');
+    const ok = await new Promise(res => { const a = new Audio(); a.preload = 'metadata'; a.onloadedmetadata = () => res(true); a.onerror = () => res(false); setTimeout(() => res(false), 8000); a.src = src; });
+    add(ok ? 'ok' : 'bad', 'Musica', ok ? 'Il file ' + ms.file + ' si carica. Il pulsante Musica compare in basso a destra (se non lo vedi, ricarica forzando).' : 'Il pulsante c\'e\', ma non riesco a caricare ' + ms.file + '. Controlla che il file sia nella cartella "musica" del sito e che il nome sia identico, maiuscole comprese.');
   }
 }
 
@@ -480,9 +482,15 @@ function render() {
   if (page === 'teams') loadComments();
   if (page === 'diagnosi') runDiag();
 }
+/* percorso del brano: accetta nomi con spazi, accenti e parentesi; rifiuta solo schemi pericolosi */
+function musicSrc() {
+  const f = String((D.musica && D.musica.file) || '').trim();
+  if (!f || /^(javascript|data|vbscript|file):/i.test(f) || /^http:\/\//i.test(f) || /^\/\//.test(f)) return '';
+  return /^https:\/\//i.test(f) || /%[0-9A-Fa-f]{2}/.test(f) ? f : encodeURI(f);
+}
 function initMusic() {
-  const m = D.musica, f = m && m.file;
-  if (!f || !/^(https:\/\/\S+|[\w][\w\-./]*)$/.test(f)) return;
+  const m = D.musica, f = musicSrc();
+  if (!f) return;
   const a = document.createElement('audio'); a.id = 'musAudio'; a.loop = true; a.preload = 'none'; a.volume = 0.4; a.hidden = true; a.src = f;
   const b = document.createElement('button'); b.id = 'mus'; b.type = 'button'; b.className = 'mus'; b.setAttribute('aria-pressed', 'false');
   b.title = m.titolo ? 'Sottofondo: ' + m.titolo : 'Musica di sottofondo';

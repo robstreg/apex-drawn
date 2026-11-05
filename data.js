@@ -82,6 +82,7 @@ window.APEX = {
  giornale: [
      { n: 1, data: "2026-10-28", titolo: "Il grande inizio" },
     { n: 2, data: "2026-11-02", titolo: "La prima gara" },
+    { n: 3, data: "2026-11-04", titolo: "Chi allunga e chi rinasce" },
     // { n: 1, data: "2026-11-02", titolo: "Il grande inizio" },
   ],
  

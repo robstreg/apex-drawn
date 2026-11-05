@@ -190,10 +190,10 @@ th:first-child,th.tot{font:600 15px var(--fd);color:var(--mut)}
 th.l,td.tm{text-align:left}
 .tmw{display:inline-flex;align-items:center;gap:10px;font:600 17px var(--fd);text-transform:uppercase}
 
-.banner{margin:0 0 18px;background:var(--p1);clip-path:var(--cut)}
-.banner img{display:block;width:100%;max-height:420px;object-fit:cover}
-.panel .banner{margin:-22px -22px 16px;clip-path:none}
-.panel .banner img{max-height:150px}
+.banner{margin:0 0 18px;background:var(--p1);clip-path:none}
+.banner img{display:block;width:100%;height:auto;max-height:75vh;object-fit:contain;margin:0 auto}
+.panel .banner{margin:0 0 16px}
+.panel .banner img{max-height:50vh}
 .paper{margin:0;max-width:860px}
 .paper img{display:block;width:100%;height:auto;background:var(--p1);border:1px solid var(--line)}
 
@@ -243,3 +243,6 @@ body.has-music .foot{padding-bottom:84px}
   @keyframes eq{0%,100%{height:4px}50%{height:16px}}
 }
 @media (prefers-reduced-motion:reduce){.mus.on .eq i{height:12px}}
+
+.banner.below{margin:26px 0 0}
+.banner a{display:block;cursor:zoom-in}

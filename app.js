@@ -114,7 +114,7 @@ function compute() {
 const S = compute();
 
 /* ---------- componenti ---------- */
-const VERSION = '2026-11-05';
+const VERSION = '2026-11-05-3';
 const EXTS = ['jpg', 'JPG', 'jpeg', 'JPEG', 'png', 'PNG', 'webp'];
 function cands(base, explicit) { return explicit ? [explicit] : EXTS.map(e => base + '.' + e); }
 function gpFoto(n) { const c = D.calendario.find(x => x.n === n) || {}; return cands('foto/gp-' + n, c.foto); }
@@ -122,7 +122,10 @@ function imgTag(list, alt, kind) {
   return '<img src="' + esc(list[0]) + '" data-c="' + esc(JSON.stringify(list)) + '" data-i="0" data-k="' + kind + '" alt="' + esc(alt) + '"' +
     (kind === 'banner' ? ' loading="lazy"' : '') + ' onload="__ld(this)" onerror="__try(this)">';
 }
-function banner(n) { return '<figure class="banner">' + imgTag(gpFoto(n), 'Foto del GP ' + n, 'banner') + '</figure>'; }
+function banner(n, below) {
+  const l = gpFoto(n), img = imgTag(l, 'Foto del GP ' + n, 'banner');
+  return '<figure class="banner' + (below ? ' below' : '') + '">' + (below ? '<a href="' + esc(l[0]) + '" target="_blank" rel="noopener" aria-label="Apri la foto a grandezza intera">' + img + '</a>' : img) + '</figure>';
+}
 window.__ld = img => { const a = img.parentNode; if (a && a.tagName === 'A') a.href = img.src; };
 window.__try = img => {
   const l = JSON.parse(img.dataset.c), i = +img.dataset.i + 1;
@@ -357,9 +360,10 @@ pages['race-results'] = function (sel) {
     '<div><span>Data</span><b>' + esc(fmtDate(r.meta.data)) + '</b></div>' +
     '<div><span>Pole position</span><b>' + (r.pole ? esc(r.pole) : '-') + '</b></div>' +
     '<div><span>Giro veloce</span><b>' + (r.fl && r.fl.pilota ? esc(r.fl.pilota) + (r.fl.tempo ? ' ' + esc(r.fl.tempo) : '') : '-') + '</b></div></div>';
-  return warnBox() + head('Race results') + tabs + banner(n) + meta +
+  return warnBox() + head('Race results') + tabs + meta +
     '<div class="tw"><table><thead><tr><th>Pos</th><th>Pilota</th><th>Tempo</th><th class="tot">Punti</th>' + (hasGrid ? '<th>Griglia</th><th>+/-</th>' : '') + '</tr></thead><tbody>' + body + '</tbody></table></div>' +
-    (hasGrid ? '<p class="note">+/- è il numero di posizioni guadagnate (+) o perse (-) rispetto alla griglia di partenza.</p>' : '');
+    (hasGrid ? '<p class="note">+/- è il numero di posizioni guadagnate (+) o perse (-) rispetto alla griglia di partenza.</p>' : '') +
+    banner(n, true);
 };
 
 function bars(title, key) {

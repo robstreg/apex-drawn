@@ -646,7 +646,7 @@ pages.pronostici = function (sel) {
   const P = S.pron, PP = P.PP;
   const rules = '<section class="panel"><h2 class="h2">Come si gioca</h2><p class="muted" style="margin:0 0 10px">Prima del GP ognuno indica i tre piloti che pensa saliranno sul podio, in ordine.</p><div class="pts">' +
     [['Vincitore esatto', PP.vincitore], ['Secondo esatto', PP.secondo], ['Terzo esatto', PP.terzo], ['Pilota nel podio ma in altra posizione', PP.nelPodio], ['Bonus podio perfetto', PP.podioPerfetto]].map(x => '<div><b>+' + x[1] + '</b><span>' + x[0] + '</span></div>').join('') + '</div></section>';
-  if (!P.rounds.length) return warnBox() + head('Pronostici', 'Indovina il podio di ogni GP e scala la classifica dei pronostici.') + rules + '<p class="empty">Nessun pronostico inserito per ora.</p>';
+    if (!P.rounds.length) return warnBox() + head('Pronostici') + '<section class="panel soon"><h2 class="h2">Stiamo lavorando per voi</h2><p class="muted">La sezione pronostici sta per arrivare. Restate sintonizzati!</p></section>';
   const rank = '<section class="sec"><h2 class="h2">Classifica pronostici</h2><div class="tw"><table><thead><tr><th>Pos</th><th>Nome</th><th>GP</th><th>Vincitori</th><th>Podi perfetti</th><th class="tot">Punti</th></tr></thead><tbody>' +
     P.ranking.map(x => '<tr><td>' + x.rank + '</td><td><span class="who">' + (drv(x.name) ? nameHtml(x.name) : esc(x.name)) + '</span></td><td>' + x.gp + '</td><td>' + x.wins + '</td><td>' + x.perfect + '</td><td class="tot">' + x.total + '</td></tr>').join('') + '</tbody></table></div></section>';
   let n = +sel; if (!P.byRound[n]) n = P.rounds[P.rounds.length - 1];

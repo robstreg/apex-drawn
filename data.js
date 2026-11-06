@@ -88,6 +88,15 @@ window.APEX = {
  
   commenti: { url: "" },
 musica: { file: "musica/Placebo-Every Me Every You.mp3", titolo: "Placebo-Every Me Every You" },
+   /* PRONOSTICI (facoltativi): prima di ogni GP ognuno scrive il suo podio previsto (1°, 2°, 3°).
+     I punti si calcolano da soli quando il GP viene inserito in "risultati".
+     Usa la pagina aggiungi-gp.html per generare le righe. Esempio (togli le // per attivarlo):
+       3: { "Mario": ["Nihholo", "Risorto", "Patabomber"], "Luca": ["Risorto", "Nihholo", "BatSciscio1"] },
+     I nomi possono essere anche di amici che non corrono. */
+  pronosticiPunti: { vincitore: 5, secondo: 3, terzo: 3, nelPodio: 1, podioPerfetto: 5 },
+  pronostici: {
+    // 3: { "Nome": ["Primo", "Secondo", "Terzo"], },
+  },
   risultati: {
     1: {
      giroVeloce: { pilota: "Nihholo", tempo: "na" },     // esempio: { pilota: "Risorto", tempo: "1:03,412" }

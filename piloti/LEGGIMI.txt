@@ -1,0 +1,3 @@
+Foto dei piloti (facoltative).
+Nome file = nickname in minuscolo, ad esempio risorto.jpg, nihholo.png.
+Se manca, nella scheda pilota compare un riquadro colorato.

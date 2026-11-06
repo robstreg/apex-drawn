@@ -246,3 +246,84 @@ body.has-music .foot{padding-bottom:84px}
 
 .banner.below{margin:26px 0 0}
 .banner a{display:block;cursor:zoom-in}
+
+/* ---- link ai piloti ---- */
+a.dl{text-decoration:none}
+a.dl:hover{text-decoration:underline;text-underline-offset:3px}
+
+/* ---- grafico ---- */
+.chartbox{padding:18px}
+.ctabs{display:flex;gap:4px;margin-bottom:12px}
+.ctab{font:700 16px/1 var(--fd);text-transform:uppercase;padding:9px 16px;background:var(--p2);color:var(--mut);border:0;cursor:pointer;clip-path:var(--para)}
+.ctab[aria-pressed=true]{background:var(--tx);color:var(--dark)}
+.cwrap{position:relative;width:100%}
+.cwrap svg{display:block;max-width:100%;touch-action:pan-y;font-family:var(--fb)}
+.cwrap svg:focus-visible{outline:2px solid var(--tx);outline-offset:2px}
+.ctip{position:absolute;z-index:3;background:var(--p2);border:1px solid var(--line);padding:8px 10px;pointer-events:none;min-width:130px;font-size:13px;box-shadow:0 6px 18px #0008}
+.ctip[hidden]{display:none}
+.ctip .th{color:var(--mut);margin-bottom:5px;font-size:12px}
+.ctip .tr2{display:flex;align-items:center;gap:8px;line-height:1.5}
+.ctip .tk{width:14px;border-top:2px solid;flex:none}
+.ctip b{min-width:26px;text-align:right;font-variant-numeric:tabular-nums;color:var(--tx)}
+.ctip .tr2 span:last-child{color:var(--mut)}
+.legend{list-style:none;display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:12px}
+.lg{display:flex;align-items:center;gap:6px;background:none;border:0;color:var(--tx);font:500 14px var(--fb);cursor:pointer;padding:6px 2px}
+.lg.off{opacity:.4;text-decoration:line-through}
+.tview{margin-top:14px;color:var(--mut)}
+.tview summary{cursor:pointer;font-size:14px}
+.tview .tw{margin-top:10px;max-height:320px;overflow:auto}
+
+/* ---- premi ---- */
+.awards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));gap:12px}
+.award{background:var(--p2);padding:16px 18px;border-left:6px solid var(--c,var(--line))}
+.award h3{font:800 italic 22px/1.1 var(--fd);text-transform:uppercase}
+.awin{font:700 20px/1.2 var(--fd);margin-top:8px}
+.aval{color:var(--mut);font-size:14px;margin-top:2px}
+.adesc{color:var(--mut);font-size:13px;margin-top:8px}
+
+/* ---- cronaca ---- */
+.cronaca{margin:22px 0 22px;padding:18px 22px;background:var(--p1);border-left:6px solid var(--tx)}
+.cronaca .h2{margin-bottom:8px}
+.cronaca p{margin-top:8px;max-width:70ch}
+
+/* ---- corsa al titolo ---- */
+.titlerace .out{opacity:.45}
+
+/* ---- sfida in famiglia ---- */
+.duel{margin:14px 0 12px;background:var(--p2);padding:12px 14px}
+.dh{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.dh b{font:700 15px var(--fd);text-transform:uppercase;letter-spacing:.04em}
+.dh small{color:var(--mut);font-size:12px}
+.dline{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;margin-top:6px}
+.dnm{font:700 18px var(--fd)}.dnm.r{text-align:right}
+.ds{font:800 italic 28px/1 var(--fd);font-variant-numeric:tabular-nums}
+.dbar{display:flex;height:6px;gap:2px;margin-top:8px;background:var(--line)}
+.dbar i{background:var(--tx);display:block}.dbar i.b{background:var(--mut)}.dbar i.tie{background:var(--line)}
+.dnote{color:var(--mut);font-size:12px;margin-top:6px}
+
+/* ---- scheda pilota ---- */
+.dhero{display:flex;gap:18px;align-items:center;margin-bottom:22px;padding:18px;background:var(--p1);border-left:8px solid var(--c)}
+.dav{width:96px;height:96px;flex:none;background:var(--p2);overflow:hidden;display:grid;place-items:center}
+.dav img{width:100%;height:100%;object-fit:cover}
+.dav:empty::after{content:'';width:100%;height:100%;background:linear-gradient(135deg,var(--c),var(--p2))}
+.dpos{font:700 20px var(--fd);margin-top:6px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.chips .chip{background:var(--p2);padding:6px 10px;text-align:left}
+.form{display:flex;gap:6px;margin-top:16px}
+.form span{width:34px;height:34px;display:grid;place-items:center;font:800 16px var(--fd);background:var(--p2);color:var(--mut)}
+.form .fp{background:var(--tx);color:var(--dark)}.form .fs{background:var(--line);color:var(--tx)}.form .fd{background:var(--red);color:var(--dark)}
+td.drop{text-decoration:line-through;opacity:.5}
+
+/* ---- pronostici ---- */
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(210px,100%),1fr));gap:12px;margin:14px 0 28px}
+.pcard{background:var(--p1);padding:14px 16px}
+.pcard header{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.pcard header b{font:700 20px var(--fd)}
+.ppt{font:800 italic 26px var(--fd)}
+.pcard ol{list-style:none;margin-top:8px}
+.pcard li{display:flex;gap:8px;align-items:baseline;padding:6px 8px;margin-top:4px;background:var(--p2);border-left:4px solid var(--line)}
+.pcard li span{color:var(--mut);font:700 14px var(--fd)}
+.pcard li em{margin-left:auto;font-style:normal;font-size:12px;color:var(--mut)}
+.pcard li.exact{border-left-color:var(--green)}.pcard li.podio{border-left-color:var(--yellow)}.pcard li.no{border-left-color:var(--red);opacity:.7}
+.perf{margin-top:8px;font:800 italic 16px var(--fd);text-transform:uppercase;color:var(--green)}
+@media (max-width:560px){.dhero{flex-direction:column;align-items:flex-start}}

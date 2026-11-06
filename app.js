@@ -38,7 +38,9 @@ function compute() {
   const rounds = Object.keys(D.risultati).map(Number)
     .filter(n => D.risultati[n] && D.risultati[n].arrivo && D.risultati[n].arrivo.length).sort((a, b) => a - b);
   const races = {};
-  let prev = null;
+    /* la griglia del GP 1 è l'ordine inverso delle qualifiche mondiale (se inserite) */
+  const qual = ((D.qualifiche && D.qualifiche.risultati) || []).map(e => e[0]).filter(k => drv(k));
+  let prev = qual.length ? qual : null;
   rounds.forEach(n => {
     const r = D.risultati[n];
     const order = r.arrivo.map(e => e[0]);
@@ -329,7 +331,7 @@ pages.home = function () {
 
   const nextName = S.nextRound ? (D.calendario.find(c => c.n === S.nextRound) || {}).nome || 'GP ' + S.nextRound : '';
   const grid = '<section class="panel"><h2 class="h2">' + (S.nextRound ? 'Griglia ' + esc(nextName) : 'Griglia') + '</h2>' +
-    (S.nextGrid ? gridList(S.nextGrid) + '<p class="note">Inversa rispetto all\'arrivo del GP precedente: l\'ultimo parte in pole.</p>' :
+    (S.nextGrid ? gridList(S.nextGrid) + '<p class="note">' + (S.played ? 'Inversa rispetto all\'arrivo del GP precedente' : 'Inversa rispetto alle qualifiche mondiale') + ': l\'ultimo parte in pole.</p>' :
       '<p class="empty">' + (S.nextRound ? 'La griglia del primo GP viene decisa prima della gara.' : 'Campionato concluso.') + '</p>') + '</section>';
 
   return '<div class="home">' + warnBox() + '<div class="hero">' + hero + tower + '</div>' + (S.played ? '<div class="sec">' + titleCard() + '</div>' : '') + '<div class="grid3 sec">' + last + cons + grid + '</div></div>';

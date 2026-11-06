@@ -359,7 +359,7 @@ pages['driver-standings'] = function () {
   const body = S.drivers.map(d => '<tr style="--c:' + colorOf(d.nick) + '"><td>' + d.rank + '</td>' +
     '<td><span class="who">' + nameHtml(d.nick) + '</span><span class="team">' + esc(teamNameOf(d.nick)) + '</span></td>' +
     perCells(d.per, d.drop) + '<td class="tot">' + d.total + '</td></tr>').join('');
-  return warnBox() + head('Driver standings', 'Classifica dei ' + D.piloti.length + ' piloti. Contano i migliori ' + D.validi + ' risultati.') +
+  return warnBox() + head('Classifica piloti', 'Classifica dei ' + D.piloti.length + ' piloti. Contano i migliori ' + D.validi + ' risultati.') +
     '<div class="tw"><table><thead><tr><th>Pos</th><th>Pilota</th>' + perHeads() + '<th class="tot">Punti</th></tr></thead><tbody>' + body + '</tbody></table></div>' +
     '<p class="note">I risultati scartati sono barrati. Il trattino indica un GP senza partecipazione.</p>';
 };
@@ -368,7 +368,7 @@ pages['constructor-standings'] = function () {
   const body = S.teams.map(t => '<tr style="--c:' + t.def.colore + '"><td>' + t.rank + '</td>' +
     '<td><span class="who">' + esc(t.def.nome) + '</span><span class="team">' + esc(t.mine.map(m => m.nick).join(' e ')) + '</span></td>' +
     perCells(t.per.map(x => Object.assign({ took: true }, x)), t.drop) + '<td class="tot">' + t.total + '</td></tr>').join('');
-  return warnBox() + head('Constructor standings', 'Classifica delle ' + D.squadre.length + ' scuderie. Ogni GP vale la somma dei punti dei due piloti, contano i migliori ' + D.validi + '.') +
+  return warnBox() + head('Classifica costruttori', 'Classifica delle ' + D.squadre.length + ' scuderie. Ogni GP vale la somma dei punti dei due piloti, contano i migliori ' + D.validi + '.') +
     '<div class="tw"><table><thead><tr><th>Pos</th><th>Scuderia</th>' + perHeads() + '<th class="tot">Punti</th></tr></thead><tbody>' + body + '</tbody></table></div>' +
     '<p class="note">I punteggi scartati sono barrati.</p>';
 };
@@ -699,7 +699,7 @@ pages['race-results'] = function (sel) {
     const k = i + 1, on = S.rounds.includes(k);
     return '<a href="#/race-results/' + k + '" class="' + (on ? '' : 'off') + '"' + (k === n ? ' aria-current="true"' : '') + '>GP ' + k + '</a>';
   }).join('') + '</nav>';
-  if (!n) return head('Race results') + tabs + '<p class="empty">Nessun GP disputato per ora.</p>';
+  if (!n) return head('Gare') + tabs + '<p class="empty">Nessun GP disputato per ora.</p>';
   const r = S.races[n];
   const hasGrid = !!r.grid;
   const body = r.rows.map(x => {
@@ -713,7 +713,7 @@ pages['race-results'] = function (sel) {
     '<div><span>Data</span><b>' + esc(fmtDate(r.meta.data)) + '</b></div>' +
     '<div><span>Pole position</span><b>' + (r.pole ? esc(r.pole) : '-') + '</b></div>' +
     '<div><span>Giro veloce</span><b>' + (r.fl && r.fl.pilota ? esc(r.fl.pilota) + (r.fl.tempo ? ' ' + esc(r.fl.tempo) : '') : '-') + '</b></div></div>';
-  return warnBox() + head('Race results') + tabs + meta + cronacaHtml(n) +
+  return warnBox() + head('Gare') + tabs + meta + cronacaHtml(n) +
     '<div class="tw"><table><thead><tr><th>Pos</th><th>Pilota</th><th>Tempo</th><th class="tot">Punti</th>' + (hasGrid ? '<th>Griglia</th><th>+/-</th>' : '') + '</tr></thead><tbody>' + body + '</tbody></table></div>' +
     (hasGrid ? '<p class="note">+/- è il numero di posizioni guadagnate (+) o perse (-) rispetto alla griglia di partenza.</p>' : '') +
     banner(n, true);
@@ -747,7 +747,7 @@ pages.statistics = function () {
     recCard('Vittoria più larga', wide && fmtGap(wide.t), wide && wide.nick, wide && where(wide.r)) +
     recCard('Vittoria più risicata', narrow && fmtGap(narrow.t), narrow && narrow.nick, narrow && where(narrow.r)) +
     recCard('Miglior rimonta', cb && ('+' + cb.g + ' posizioni'), cb && cb.nick, cb && (where(cb.r) + ', dal ' + cb.from + '° al ' + cb.to + '°')) + '</div>';
-  return warnBox() + head('Statistics', 'Dati calcolati sui ' + S.played + ' GP disputati.') +
+  return warnBox() + head('Statistiche', 'Dati calcolati sui ' + S.played + ' GP disputati.') +
     '<div class="grid2">' + bars('Vittorie', 'wins') + bars('Podi', 'podiums') + bars('Pole position', 'poles') + bars('Giri veloci', 'fls') + '</div>' +
     '<h2 class="h2 sec">Record</h2>' + recs + chartBox() + awardsHtml();
 };
@@ -762,7 +762,7 @@ pages.calendar = function () {
     return played ? '<a class="ci" href="#/race-results/' + n + '">' + inner + '</a>' : '<div class="ci' + (next ? ' next' : '') + '">' + inner + '</div>';
   });
   const grid = S.nextGrid ? '<h2 class="h2 sec">Griglia del GP ' + S.nextRound + '</h2><div class="panel">' + gridList(S.nextGrid) + '</div>' : '';
-  return warnBox() + head('Calendar', TOTAL + ' Gran Premi. Il nome di un GP disputato apre il risultato.') + '<div class="cal">' + items.join('') + '</div>' + grid;
+  return warnBox() + head('Calendario', TOTAL + ' Gran Premi. Il nome di un GP disputato apre il risultato.') + '<div class="cal">' + items.join('') + '</div>' + grid;
 };
 
 pages.diagnosi = function () {
@@ -826,8 +826,8 @@ pages.regolamento = function () {
 };
 
 /* ---------- router ---------- */
-const NAV = [['home', 'Home'], ['driver-standings', 'Driver Standings'], ['constructor-standings', 'Constructor Standings'], ['teams', 'Teams'], ['qualifiche', 'Qualifiche'],
-  ['race-results', 'Race Results'], ['statistics', 'Statistics'], ['pronostici', 'Pronostici'], ['calendar', 'Calendar'], ['giornale', 'Giornale'], ['regolamento', 'Regolamento']];
+const NAV = [['home', 'Home'], ['driver-standings', 'Classifica piloti'], ['constructor-standings', 'Classifica costruttori'], ['teams', 'Teams'], ['qualifiche', 'Qualifiche'],
+  ['race-results', 'Gare'], ['statistics', 'Statistiche'], ['pronostici', 'Pronostici'], ['calendar', 'Calendario'], ['giornale', 'Giornale'], ['regolamento', 'Regolamento']];
 $('#nav').innerHTML = NAV.map(n => '<a href="#/' + n[0] + '" data-p="' + n[0] + '">' + n[1] + '</a>').join('');
 $('#foot').textContent = S.played ? 'Dati aggiornati dopo il GP ' + S.lastRound + '. Le classifiche si calcolano in automatico dai risultati.' : 'Nessun GP ancora disputato.';
 $('#foot').textContent += ' Versione del sito: ' + VERSION + '.';

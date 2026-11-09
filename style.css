@@ -327,5 +327,47 @@ td.drop{text-decoration:line-through;opacity:.5}
 .pcard li.exact{border-left-color:var(--green)}.pcard li.podio{border-left-color:var(--yellow)}.pcard li.no{border-left-color:var(--red);opacity:.7}
 .perf{margin-top:8px;font:800 italic 16px var(--fd);text-transform:uppercase;color:var(--green)}
 @media (max-width:560px){.dhero{flex-direction:column;align-items:flex-start}}
+
 .soon{text-align:center;padding:48px 22px}
 .soon .h2{font-size:34px;margin-bottom:8px}
+
+/* ---- selettore stagioni ---- */
+.brandrow{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.seas{display:flex;gap:4px;overflow:visible}
+.seas a{font:700 13px/1 var(--fd);text-transform:uppercase;letter-spacing:.04em;color:var(--mut);text-decoration:none;padding:7px 11px;border:1px solid var(--line);clip-path:none}
+.seas a:hover{color:var(--tx);border-color:var(--mut)}
+.seas a[aria-current=true],.seas a[aria-current=page]{background:var(--tx);color:var(--dark);border-color:var(--tx)}
+
+/* ---- teaser stagione in arrivo ---- */
+.teaser{text-align:center;padding:30px 0 10px}
+.tkick{font:700 20px var(--fd);letter-spacing:.3em;text-transform:uppercase;color:var(--mut)}
+.tbig{font:800 italic clamp(38px,8vw,88px)/.95 var(--fd);text-transform:uppercase;max-width:16ch;margin:14px auto 0}
+.tstay{font:800 italic clamp(26px,5vw,44px) var(--fd);text-transform:uppercase;letter-spacing:.12em;margin-top:22px;-webkit-text-stroke:1.5px var(--tx);color:transparent;animation:blink 2.4s ease-in-out infinite}
+.tcount{margin-top:14px;color:var(--mut)}.tcount b{font:800 italic 40px var(--fd);color:var(--tx)}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px 14px;max-width:880px;margin:38px auto 30px}
+.tgrid span{height:54px;display:grid;place-items:center;background:var(--p2);border-top:3px solid var(--line);clip-path:var(--para);animation:slot 3s ease-in-out infinite;animation-delay:calc(var(--i)*.14s)}
+.tgrid span:nth-child(even){transform:translateY(18px)}
+.tgrid b{font:800 italic 26px var(--fd);color:var(--mut)}
+.tlinks{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:34px}
+.tlinks .btn{text-decoration:none;display:inline-block}
+.btn.alt{background:transparent;color:var(--tx);box-shadow:inset 0 0 0 2px var(--tx)}
+@keyframes blink{50%{opacity:.45}}
+@keyframes slot{50%{border-top-color:var(--tx);background:var(--p1)}}
+@media (prefers-reduced-motion:reduce){.tstay,.tgrid span{animation:none}}
+
+/* ---- albo d'oro ---- */
+.albo{display:grid;gap:14px}
+.alb{background:var(--p1);padding:20px 22px;border-left:8px solid var(--line)}
+.alb.done{border-left-color:var(--yellow)}
+.alb header{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.alb h3{font:800 italic 34px/1 var(--fd);text-transform:uppercase}
+.chip.gold{background:var(--yellow);color:var(--dark)}
+.albg{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:12px}
+.albc{background:var(--p2);padding:14px 16px;border-top:4px solid var(--c,var(--line))}
+.albc span{display:block;color:var(--mut);font:600 14px var(--fd);text-transform:uppercase;letter-spacing:.06em}
+.albc b{display:block;font:800 italic 32px/1.1 var(--fd);text-transform:uppercase;margin-top:2px}
+.albc small{color:var(--mut);font-size:13px}
+.alb.soon2{border-left-style:dashed;opacity:.8}
+.hof td,.hof th{text-align:center}
+.seas .albolink{margin-left:8px;border-style:dashed}
+@media (max-width:640px){.tgrid span:nth-child(even){transform:none}.tgrid{grid-template-columns:repeat(3,1fr)}}

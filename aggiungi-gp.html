@@ -30,6 +30,13 @@ code{background:var(--p2);padding:1px 6px;font-size:14px}
   <div class="strip" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
 </header>
 <main class="wrap tool">
+  <p id="stagbar" class="note" style="margin-bottom:16px"></p>
+  <script>
+    document.addEventListener('DOMContentLoaded',function(){var S=window.STAGIONI||[];if(S.length<2)return;var q=new URLSearchParams(location.search).get('s');
+    var cur=S.find(function(s){return String(s.id)===q})||S.find(function(s){return s.id===window.STAGIONE_CORRENTE})||S[0];
+    document.getElementById('stagbar').innerHTML='Stai inserendo i dati della <b>'+cur.nome+'</b>. Cambia stagione: '+S.map(function(s){return s===cur?'<b>'+s.nome+'</b>':'<a href="?s='+s.id+'">'+s.nome+'</a>'}).join(' | ');});
+  </script>
+
   <h1 class="h1">Aggiungi un GP</h1>
   <p class="lede">Incolla l'arrivo e ottieni il blocco pronto da incollare in <code>data.js</code>. Questa pagina non salva nulla: genera solo il testo.</p>
 
@@ -75,9 +82,11 @@ code{background:var(--p2);padding:1px 6px;font-size:14px}
   </section>
 </main>
 <script src="data.js"></script>
+<script src="data-s2.js"></script>
+<script src="stagioni.js"></script>
 <script>
 (function () {
-  const D = window.APEX, $ = s => document.querySelector(s);
+  const D = window[((window.STAGIONI || []).find(s => String(s.id) === new URLSearchParams(location.search).get('s')) || (window.STAGIONI || []).find(s => s.id === window.STAGIONE_CORRENTE) || { dati: 'APEX' }).dati || 'APEX'], $ = s => document.querySelector(s);
   const nicks = D.piloti.map(p => p.nick);
   const done = Object.keys(D.risultati).map(Number);
   $('#n').value = (done.length ? Math.max.apply(null, done) : 0) + 1;
@@ -143,7 +152,7 @@ code{background:var(--p2);padding:1px 6px;font-size:14px}
 </script>
 <script>
 (function () {
-  const D = window.APEX, $ = s => document.querySelector(s), have = Object.keys(D.pronostici || {}).map(Number);
+  const D = window[((window.STAGIONI || []).find(s => String(s.id) === new URLSearchParams(location.search).get('s')) || (window.STAGIONI || []).find(s => s.id === window.STAGIONE_CORRENTE) || { dati: 'APEX' }).dati || 'APEX'], $ = s => document.querySelector(s), have = Object.keys(D.pronostici || {}).map(Number);
   const allN = Object.keys(D.risultati).map(Number), doneMax = allN.length ? Math.max.apply(null, allN) : 0;
   $('#pn').value = Math.min(D.gare || 10, Math.max(doneMax + 1, have.length ? Math.max.apply(null, have) + 1 : 1));
   function findNick(raw) {

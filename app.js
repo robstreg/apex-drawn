@@ -1,7 +1,16 @@
 (function () {
 'use strict';
-const D = window.APEX;
-const TOTAL = D.gare || D.calendario.length;
+/* ---------- stagioni ---------- */
+const SEAS = (Array.isArray(window.STAGIONI) && window.STAGIONI.length ? window.STAGIONI : [{ id: 1, nome: 'Stagione 1', dati: 'APEX' }]).filter(s => window[s.dati || 'APEX']);
+const CUR = SEAS.find(s => String(s.id) === new URLSearchParams(location.search).get('s')) || SEAS.find(s => s.id === window.STAGIONE_CORRENTE) || SEAS[0];
+const BASE = CUR.cartella || '';
+let D = window[CUR.dati || 'APEX'];
+let TOTAL = D.gare || (D.calendario || []).length;
+/* etichette personalizzate dei menu e dei titoli (stagioni.js, blocco "etichette") */
+const L = s => (window.ETICHETTE && window.ETICHETTE[String(s).toLowerCase()]) || s;
+document.documentElement.dataset.s = CUR.id;
+if (CUR.tema && !document.querySelector('link[href="' + CUR.tema + '"]')) { const lk = document.createElement('link'); lk.rel = 'stylesheet'; lk.href = CUR.tema; document.head.appendChild(lk); }
+if (CUR.coloreBrowser) { const tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.content = CUR.coloreBrowser; }
 const $ = s => document.querySelector(s);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const team = id => D.squadre.find(t => t.id === id) || { id, nome: id, sigla: '?', colore: '#8e97aa', logo: '' };
@@ -38,7 +47,7 @@ function compute() {
   const rounds = Object.keys(D.risultati).map(Number)
     .filter(n => D.risultati[n] && D.risultati[n].arrivo && D.risultati[n].arrivo.length).sort((a, b) => a - b);
   const races = {};
-    /* la griglia del GP 1 è l'ordine inverso delle qualifiche mondiale (se inserite) */
+  /* la griglia del GP 1 è l'ordine inverso delle qualifiche mondiale (se inserite) */
   const qual = ((D.qualifiche && D.qualifiche.risultati) || []).map(e => e[0]).filter(k => drv(k));
   let prev = qual.length ? qual : null;
   rounds.forEach(n => {
@@ -240,13 +249,14 @@ function compute() {
 
   return { warns, rounds, races, played, lastRound, nextRound, nextGrid, drivers, teams, hist, awards, title, remaining, pron };
 }
-const S = compute();
+const TEASER = !(D.piloti && D.piloti.length);
+const S = TEASER ? { warns: [], rounds: [], races: {}, played: 0, lastRound: 0, nextRound: 1, drivers: [], teams: [], hist: [], awards: [], title: null, remaining: TOTAL, pron: { rounds: [], ranking: [], byRound: {} } } : compute();
 
 /* ---------- componenti ---------- */
-const VERSION = '2026-11-06';
+const VERSION = '2026-11-09';
 const EXTS = ['jpg', 'JPG', 'jpeg', 'JPEG', 'png', 'PNG', 'webp'];
 function cands(base, explicit) { return explicit ? [explicit] : EXTS.map(e => base + '.' + e); }
-function gpFoto(n) { const c = D.calendario.find(x => x.n === n) || {}; return cands('foto/gp-' + n, c.foto); }
+function gpFoto(n) { const c = D.calendario.find(x => x.n === n) || {}; return cands(BASE + 'foto/gp-' + n, c.foto); }
 function imgTag(list, alt, kind) {
   return '<img src="' + esc(list[0]) + '" data-c="' + esc(JSON.stringify(list)) + '" data-i="0" data-k="' + kind + '" alt="' + esc(alt) + '"' +
     (kind === 'banner' ? ' loading="lazy"' : '') + ' onload="__ld(this)" onerror="__try(this)">';
@@ -291,7 +301,7 @@ function fmtDate(s) {
 function gridList(grid) {
   return '<div class="tower">' + grid.map((k, i) => row(i + 1, colorOf(k), k, teamNameOf(k), '', i)).join('') + '</div>';
 }
-function head(title, lede) { return '<h1 class="h1">' + title + '</h1>' + (lede ? '<p class="lede">' + lede + '</p>' : ''); }
+function head(title, lede) { return '<h1 class="h1">' + esc(L(title)) + '</h1>' + (lede ? '<p class="lede">' + lede + '</p>' : ''); }
 function warnBox() {
   return S.warns.length ? '<div class="warn"><b>Controlla data.js</b>' + S.warns.map(w => '<p>' + esc(w) + '</p>').join('') + '</div>' : '';
 }
@@ -361,7 +371,7 @@ pages['driver-standings'] = function () {
   const body = S.drivers.map(d => '<tr style="--c:' + colorOf(d.nick) + '"><td>' + d.rank + '</td>' +
     '<td><span class="who">' + nameHtml(d.nick) + '</span><span class="team">' + esc(teamNameOf(d.nick)) + '</span></td>' +
     perCells(d.per, d.drop) + '<td class="tot">' + d.total + '</td></tr>').join('');
-  return warnBox() + head('Classifica piloti', 'Classifica dei ' + D.piloti.length + ' piloti. Contano i migliori ' + D.validi + ' risultati.') +
+  return warnBox() + head('Driver standings', 'Classifica dei ' + D.piloti.length + ' piloti. Contano i migliori ' + D.validi + ' risultati.') +
     '<div class="tw"><table><thead><tr><th>Pos</th><th>Pilota</th>' + perHeads() + '<th class="tot">Punti</th></tr></thead><tbody>' + body + '</tbody></table></div>' +
     '<p class="note">I risultati scartati sono barrati. Il trattino indica un GP senza partecipazione.</p>';
 };
@@ -370,7 +380,7 @@ pages['constructor-standings'] = function () {
   const body = S.teams.map(t => '<tr style="--c:' + t.def.colore + '"><td>' + t.rank + '</td>' +
     '<td><span class="who">' + esc(t.def.nome) + '</span><span class="team">' + esc(t.mine.map(m => m.nick).join(' e ')) + '</span></td>' +
     perCells(t.per.map(x => Object.assign({ took: true }, x)), t.drop) + '<td class="tot">' + t.total + '</td></tr>').join('');
-  return warnBox() + head('Classifica costruttori', 'Classifica delle ' + D.squadre.length + ' scuderie. Ogni GP vale la somma dei punti dei due piloti, contano i migliori ' + D.validi + '.') +
+  return warnBox() + head('Constructor standings', 'Classifica delle ' + D.squadre.length + ' scuderie. Ogni GP vale la somma dei punti dei due piloti, contano i migliori ' + D.validi + '.') +
     '<div class="tw"><table><thead><tr><th>Pos</th><th>Scuderia</th>' + perHeads() + '<th class="tot">Punti</th></tr></thead><tbody>' + body + '</tbody></table></div>' +
     '<p class="note">I punteggi scartati sono barrati.</p>';
 };
@@ -612,12 +622,62 @@ function duelHtml(t) {
     '<p class="dnote">Conta chi arriva davanti nelle gare in cui entrambi sono al via.' + (d.ties ? ' Pari: ' + d.ties + '.' : '') + '</p></div>';
 }
 
+
+/* ---------- stagioni: teaser, albo d'oro ---------- */
+function teaserPage() {
+  const A = D.annuncio || {}, slots = Math.min(40, A.posti || 20);
+  let cd = '';
+  if (A.data) { const dd = Math.ceil((new Date(A.data + 'T00:00:00') - new Date()) / 864e5); if (dd > 0) cd = '<p class="tcount"><b>' + dd + '</b> ' + (dd === 1 ? 'giorno' : 'giorni') + ' al via</p>'; }
+  return '<section class="teaser"><p class="tkick">' + esc(CUR.nome) + '</p><h1 class="tbig">' + esc(A.titolo || 'In arrivo') + '</h1>' +
+    '<p class="tstay">' + esc(A.testo || 'Stay tuned') + '</p>' + cd +
+    '<div class="tgrid" aria-hidden="true">' + Array.from({ length: slots }, (_, i) => '<span style="--i:' + i + '"><b>?</b></span>').join('') + '</div>' +
+    '<p class="tlinks">' + SEAS.filter(s => s !== CUR).map(s => '<a class="btn" href="?s=' + s.id + '#/home">Vai alla ' + esc(s.nome) + '</a>').join(' ') + ' <a class="btn alt" href="#/albo">Albo d\'oro</a></p></section>';
+}
+function seasonSummary(s) {
+  const data = window[s.dati || 'APEX'];
+  if (!data || !data.piloti || !data.piloti.length) return { s, empty: true, data };
+  const keepD = D, keepT = TOTAL;
+  try {
+    D = data; TOTAL = data.gare || (data.calendario || []).length;
+    const R = s === CUR ? S : compute();
+    return { s, data, R, total: TOTAL, done: R.played >= TOTAL && R.played > 0 || data.concluso === true };
+  } catch (e) { return { s, empty: true, data }; }
+  finally { D = keepD; TOTAL = keepT; }
+}
+pages.albo = function () {
+  const all = SEAS.map(seasonSummary);
+  const cards = all.slice().reverse().map(x => {
+    const nm = esc(x.s.nome);
+    if (x.empty) return '<article class="alb soon2"><header><h3>' + nm + '</h3><span class="chip">In arrivo</span></header><p class="muted">' + esc(((x.data && x.data.annuncio) || {}).testo || 'Stay tuned') + '</p></article>';
+    const R = x.R, d1 = R.drivers[0], t1 = R.teams[0], d2 = R.drivers[1], t2 = R.teams[1];
+    const col = d1 ? (x.data.squadre.find(t => t.id === d1.squadra) || {}).colore : '';
+    const tcol = t1 ? t1.def.colore : '';
+    const status = x.done ? 'Concluso' : (R.played ? 'In corso, ' + R.played + ' GP su ' + x.total : 'Non ancora iniziato');
+    const lab = x.done ? ['Campione piloti', 'Campione costruttori'] : ['Al comando tra i piloti', 'Al comando tra i costruttori'];
+    return '<article class="alb' + (x.done ? ' done' : '') + '"><header><h3>' + nm + '</h3><span class="chip' + (x.done ? ' gold' : '') + '">' + status + '</span></header>' +
+      (R.played ? '<div class="albg"><div class="albc" style="--c:' + (col || 'var(--tx)') + '"><span>' + lab[0] + '</span><b>' + esc(d1.nick) + '</b><small>' + esc(team2(x.data, d1.squadra)) + ', ' + d1.total + ' punti' + (d2 ? ' (+' + (d1.total - d2.total) + ' sul 2°, ' + esc(d2.nick) + ')' : '') + '</small></div>' +
+      '<div class="albc" style="--c:' + (tcol || 'var(--tx)') + '"><span>' + lab[1] + '</span><b>' + esc(t1.def.nome) + '</b><small>' + t1.total + ' punti' + (t2 ? ' (+' + (t1.total - t2.total) + ' sul 2°, ' + esc(t2.def.nome) + ')' : '') + '</small></div></div>' : '<p class="muted">Il campionato deve ancora cominciare.</p>') + '</article>';
+  }).join('');
+  /* classifica di tutti i tempi, per nickname */
+  const car = {};
+  all.forEach(x => { if (x.empty) return;
+    x.R.drivers.forEach((d, i) => { const c = car[d.nick] = car[d.nick] || { nick: d.nick, st: 0, gp: 0, w: 0, p: 0, po: 0, fl: 0, pt: 0, tit: 0, titT: 0 };
+      c.st++; c.gp += d.starts; c.w += d.wins; c.p += d.podiums; c.po += d.poles; c.fl += d.fls; c.pt += d.total; if (x.done && i === 0) c.tit++; });
+    if (x.done && x.R.teams[0]) { const win = x.R.teams[0].id; x.R.drivers.filter(d => d.squadra === win).forEach(d => { car[d.nick].titT++; }); } });
+  const rows = Object.values(car).sort((a, b) => b.tit - a.tit || b.titT - a.titT || b.w - a.w || b.pt - a.pt);
+  const hof = rows.length ? '<h2 class="h2 sec">Classifica di tutti i tempi</h2><div class="tw hof"><table><thead><tr><th>Pilota</th><th>Titoli piloti</th><th>Titoli squadra</th><th>Stagioni</th><th>GP</th><th>Vittorie</th><th>Podi</th><th>Pole</th><th>Giri veloci</th><th class="tot">Punti</th></tr></thead><tbody>' +
+    rows.map(c => '<tr><td><span class="who">' + esc(c.nick) + '</span></td><td>' + c.tit + '</td><td>' + c.titT + '</td><td>' + c.st + '</td><td>' + c.gp + '</td><td>' + c.w + '</td><td>' + c.p + '</td><td>' + c.po + '</td><td>' + c.fl + '</td><td class="tot">' + c.pt + '</td></tr>').join('') +
+    '</tbody></table></div><p class="note">I titoli si assegnano a stagione conclusa. Un titolo squadra vale per entrambi i piloti della squadra campione. Punti: somma dei punti validi di ogni stagione.</p>' : '';
+  return head("Albo d'oro", 'I campioni di ogni stagione e i numeri di tutti i tempi.') + '<div class="albo">' + cards + '</div>' + hof;
+};
+function team2(data, id) { const t = (data.squadre || []).find(x => x.id === id); return t ? t.nome : id; }
+
 /* ---------- scheda pilota ---------- */
 pages.driver = function (sel) {
   const nick = decodeURIComponent(sel || ''), d = S.drivers.find(x => x.nick === nick);
   if (!d) return head('Pilota non trovato') + '<p class="empty">Non trovo questo pilota. <a href="#/driver-standings">Torna alla classifica</a>.</p>';
   const t = team(d.squadra), c = t.colore, tm = S.teams.find(x => x.id === d.squadra);
-  const av = imgTag(cands('piloti/' + nick.toLowerCase()), nick, 'avatar');
+  const av = imgTag(cands(BASE + 'piloti/' + nick.toLowerCase()), nick, 'avatar');
   const stat = (k, v) => '<div class="rec" style="--c:' + c + '"><span>' + k + '</span><b>' + v + '</b></div>';
   const dec = x => (Math.round(x * 10) / 10).toString().replace('.', ',');
   const hero = '<div class="dhero" style="--c:' + c + '"><div class="dav">' + av + '</div><div><h1 class="h1" style="margin:0">' + esc(nick) + '</h1>' +
@@ -648,7 +708,7 @@ pages.pronostici = function (sel) {
   const P = S.pron, PP = P.PP;
   const rules = '<section class="panel"><h2 class="h2">Come si gioca</h2><p class="muted" style="margin:0 0 10px">Prima del GP ognuno indica i tre piloti che pensa saliranno sul podio, in ordine.</p><div class="pts">' +
     [['Vincitore esatto', PP.vincitore], ['Secondo esatto', PP.secondo], ['Terzo esatto', PP.terzo], ['Pilota nel podio ma in altra posizione', PP.nelPodio], ['Bonus podio perfetto', PP.podioPerfetto]].map(x => '<div><b>+' + x[1] + '</b><span>' + x[0] + '</span></div>').join('') + '</div></section>';
-    if (!P.rounds.length) return warnBox() + head('Pronostici') + '<section class="panel soon"><h2 class="h2">Stiamo lavorando per voi</h2><p class="muted">La sezione pronostici sta per arrivare. Restate sintonizzati!</p></section>';
+  if (!P.rounds.length) return warnBox() + head('Pronostici') + '<section class="panel soon"><h2 class="h2">Stiamo lavorando per voi</h2><p class="muted">La sezione pronostici sta per arrivare. Restate sintonizzati!</p></section>';
   const rank = '<section class="sec"><h2 class="h2">Classifica pronostici</h2><div class="tw"><table><thead><tr><th>Pos</th><th>Nome</th><th>GP</th><th>Vincitori</th><th>Podi perfetti</th><th class="tot">Punti</th></tr></thead><tbody>' +
     P.ranking.map(x => '<tr><td>' + x.rank + '</td><td><span class="who">' + (drv(x.name) ? nameHtml(x.name) : esc(x.name)) + '</span></td><td>' + x.gp + '</td><td>' + x.wins + '</td><td>' + x.perfect + '</td><td class="tot">' + x.total + '</td></tr>').join('') + '</tbody></table></div></section>';
   let n = +sel; if (!P.byRound[n]) n = P.rounds[P.rounds.length - 1];
@@ -684,7 +744,7 @@ pages.giornale = function (sel) {
   const intro = 'Il quotidiano ufficiale del campionato mondiale Apex Drawn.';
   if (!G.length) return head('Safe Sport', intro) + '<div class="panel"><p class="empty">Il primo numero non è ancora uscito.</p></div>';
   const cur = G.find(g => g.n === +sel) || G[G.length - 1];
-  const list = cands('giornale/safe-sport-' + cur.n, cur.file);
+  const list = cands(BASE + 'giornale/safe-sport-' + cur.n, cur.file);
   const tabs = G.length > 1 ? '<nav class="tabs" aria-label="Numeri del giornale">' + G.map(g =>
     '<a href="#/giornale/' + g.n + '"' + (g.n === cur.n ? ' aria-current="true"' : '') + '>N. ' + g.n + '</a>').join('') + '</nav>' : '';
   const meta = '<div class="meta"><div><span>Numero</span><b>' + cur.n + '</b></div>' +
@@ -701,7 +761,7 @@ pages['race-results'] = function (sel) {
     const k = i + 1, on = S.rounds.includes(k);
     return '<a href="#/race-results/' + k + '" class="' + (on ? '' : 'off') + '"' + (k === n ? ' aria-current="true"' : '') + '>GP ' + k + '</a>';
   }).join('') + '</nav>';
-  if (!n) return head('Gare') + tabs + '<p class="empty">Nessun GP disputato per ora.</p>';
+  if (!n) return head('Race results') + tabs + '<p class="empty">Nessun GP disputato per ora.</p>';
   const r = S.races[n];
   const hasGrid = !!r.grid;
   const body = r.rows.map(x => {
@@ -715,7 +775,7 @@ pages['race-results'] = function (sel) {
     '<div><span>Data</span><b>' + esc(fmtDate(r.meta.data)) + '</b></div>' +
     '<div><span>Pole position</span><b>' + (r.pole ? esc(r.pole) : '-') + '</b></div>' +
     '<div><span>Giro veloce</span><b>' + (r.fl && r.fl.pilota ? esc(r.fl.pilota) + (r.fl.tempo ? ' ' + esc(r.fl.tempo) : '') : '-') + '</b></div></div>';
-  return warnBox() + head('Gare') + tabs + meta + cronacaHtml(n) +
+  return warnBox() + head('Race results') + tabs + meta + cronacaHtml(n) +
     '<div class="tw"><table><thead><tr><th>Pos</th><th>Pilota</th><th>Tempo</th><th class="tot">Punti</th>' + (hasGrid ? '<th>Griglia</th><th>+/-</th>' : '') + '</tr></thead><tbody>' + body + '</tbody></table></div>' +
     (hasGrid ? '<p class="note">+/- è il numero di posizioni guadagnate (+) o perse (-) rispetto alla griglia di partenza.</p>' : '') +
     banner(n, true);
@@ -749,7 +809,7 @@ pages.statistics = function () {
     recCard('Vittoria più larga', wide && fmtGap(wide.t), wide && wide.nick, wide && where(wide.r)) +
     recCard('Vittoria più risicata', narrow && fmtGap(narrow.t), narrow && narrow.nick, narrow && where(narrow.r)) +
     recCard('Miglior rimonta', cb && ('+' + cb.g + ' posizioni'), cb && cb.nick, cb && (where(cb.r) + ', dal ' + cb.from + '° al ' + cb.to + '°')) + '</div>';
-  return warnBox() + head('Statistiche', 'Dati calcolati sui ' + S.played + ' GP disputati.') +
+  return warnBox() + head('Statistics', 'Dati calcolati sui ' + S.played + ' GP disputati.') +
     '<div class="grid2">' + bars('Vittorie', 'wins') + bars('Podi', 'podiums') + bars('Pole position', 'poles') + bars('Giri veloci', 'fls') + '</div>' +
     '<h2 class="h2 sec">Record</h2>' + recs + chartBox() + awardsHtml();
 };
@@ -764,7 +824,7 @@ pages.calendar = function () {
     return played ? '<a class="ci" href="#/race-results/' + n + '">' + inner + '</a>' : '<div class="ci' + (next ? ' next' : '') + '">' + inner + '</div>';
   });
   const grid = S.nextGrid ? '<h2 class="h2 sec">Griglia del GP ' + S.nextRound + '</h2><div class="panel">' + gridList(S.nextGrid) + '</div>' : '';
-  return warnBox() + head('Calendario', TOTAL + ' Gran Premi. Il nome di un GP disputato apre il risultato.') + '<div class="cal">' + items.join('') + '</div>' + grid;
+  return warnBox() + head('Calendar', TOTAL + ' Gran Premi. Il nome di un GP disputato apre il risultato.') + '<div class="cal">' + items.join('') + '</div>' + grid;
 };
 
 pages.diagnosi = function () {
@@ -784,7 +844,7 @@ async function runDiag() {
   if (!Array.isArray(D.giornale)) add('bad', 'Giornale', 'Nel data.js manca il blocco "giornale: [ ... ]". Probabilmente il data.js è di una versione precedente: incolla il blocco sopra la riga "risultati: {".');
   else if (!D.giornale.length) add('info', 'Giornale', 'Il blocco giornale è vuoto, quindi la pagina dice che il primo numero non è uscito. Attenzione: le righe che iniziano con // sono commenti e vengono ignorate. Togli le due barre e scrivi ad esempio: { n: 1, data: "2026-11-02", titolo: "Titolo" },');
   else for (const g of D.giornale) {
-    const list = cands('giornale/safe-sport-' + g.n, g.file), f = await probeImg(list);
+    const list = cands(BASE + 'giornale/safe-sport-' + g.n, g.file), f = await probeImg(list);
     if (f) add('ok', 'Giornale numero ' + g.n, 'Trovato il file ' + f + '.');
     else add('bad', 'Giornale numero ' + g.n, 'Non trovo il file ' + list[0] + (list.length > 1 ? ' (provato anche ' + list.slice(1).join(', ') + ')' : '') + '. Il file deve essere nella cartella "giornale" del sito, con questo nome e il numero uguale a n: ' + g.n + '.');
   }
@@ -828,24 +888,34 @@ pages.regolamento = function () {
 };
 
 /* ---------- router ---------- */
-const NAV = [['home', 'Home'], ['driver-standings', 'Classifica piloti'], ['constructor-standings', 'Classifica costruttori'], ['teams', 'Teams'], ['qualifiche', 'Qualifiche'],
-  ['race-results', 'Gare'], ['statistics', 'Statistiche'], ['pronostici', 'Pronostici'], ['calendar', 'Calendario'], ['giornale', 'Giornale'], ['regolamento', 'Regolamento']];
+const NAV_FULL = [['home', 'Home'], ['driver-standings', 'Driver Standings'], ['constructor-standings', 'Constructor Standings'], ['teams', 'Teams'], ['qualifiche', 'Qualifiche'],
+  ['race-results', 'Race Results'], ['statistics', 'Statistics'], ['pronostici', 'Pronostici'], ['calendar', 'Calendar'], ['giornale', 'Giornale'], ['regolamento', 'Regolamento'], ['albo', "Albo d'oro"]];
+const NAVALL = NAV_FULL.map(n => [n[0], L(n[1])]);
+const NAV = NAVALL.filter(n => (!TEASER || n[0] === 'home') && !(SEAS.length > 1 && n[0] === 'albo'));
+if (SEAS.length > 1) {
+  const row = document.createElement('div'); row.className = 'brandrow';
+  const br = $('.brand'); br.parentNode.insertBefore(row, br); row.appendChild(br);
+  const sn = document.createElement('nav'); sn.className = 'seas'; sn.setAttribute('aria-label', 'Stagioni');
+  sn.innerHTML = SEAS.map(s => '<a href="?s=' + s.id + '#/home"' + (s === CUR ? ' aria-current="true"' : '') + '>' + esc(s.nome) + '</a>').join('') + '<a href="#/albo" data-p="albo" class="albolink">' + esc(L("Albo d'oro")) + '</a>';
+  row.appendChild(sn);
+}
 $('#nav').innerHTML = NAV.map(n => '<a href="#/' + n[0] + '" data-p="' + n[0] + '">' + n[1] + '</a>').join('');
-$('#foot').textContent = S.played ? 'Dati aggiornati dopo il GP ' + S.lastRound + '. Le classifiche si calcolano in automatico dai risultati.' : 'Nessun GP ancora disputato.';
+$('#foot').textContent = TEASER ? CUR.nome + ': stay tuned.' : (CUR.nome + '. ') + (S.played ? 'Dati aggiornati dopo il GP ' + S.lastRound + '. Le classifiche si calcolano in automatico dai risultati.' : 'Nessun GP ancora disputato.');
 $('#foot').textContent += ' Versione del sito: ' + VERSION + '.';
 let first = true;
 function render() {
   const parts = location.hash.replace(/^#\/?/, '').split('/');
-  const page = (NAV.some(n => n[0] === parts[0]) || parts[0] === 'diagnosi' || parts[0] === 'driver') ? parts[0] : 'home';
+  const page = (NAVALL.some(n => n[0] === parts[0]) || (!TEASER && (parts[0] === 'diagnosi' || parts[0] === 'driver'))) ? parts[0] : 'home';
   const navP = page === 'driver' ? 'driver-standings' : page;
-  $('#app').innerHTML = pages[page](parts[1]);
+  $('#app').innerHTML = (TEASER && page !== 'albo') ? teaserPage() : pages[page](parts[1]);
   document.querySelectorAll('#nav a').forEach(a => {
     if (a.dataset.p === navP) { a.setAttribute('aria-current', 'page'); a.scrollIntoView({ block: 'nearest', inline: 'center' }); } else a.removeAttribute('aria-current');
   });
-  document.title = (page === 'home' ? 'Apex Drawn - Campionato mondiale' : (page === 'diagnosi' ? 'Diagnosi' : page === 'driver' ? decodeURIComponent(parts[1] || 'Pilota') : NAV.find(n => n[0] === page)[1]) + ' - Apex Drawn');
+  const al = document.querySelector('.seas a[data-p="albo"]'); if (al) { if (page === 'albo') al.setAttribute('aria-current', 'page'); else al.removeAttribute('aria-current'); }
+  document.title = (page === 'home' ? 'Apex Drawn - ' + (SEAS.length > 1 ? CUR.nome : 'Campionato mondiale') : (page === 'diagnosi' ? 'Diagnosi' : page === 'driver' ? decodeURIComponent(parts[1] || 'Pilota') : NAVALL.find(n => n[0] === page)[1]) + ' - Apex Drawn');
   if (!first) { window.scrollTo(0, 0); $('#app').focus({ preventScroll: true }); }
   first = false;
-  if (page === 'teams') loadComments();
+  if (page === 'teams' && !TEASER) loadComments();
   if (page === 'diagnosi') runDiag();
   if (page === 'statistics') initChart();
 }

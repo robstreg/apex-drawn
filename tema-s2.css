@@ -1,0 +1,33 @@
+/* ==========================================================
+   TEMA STAGIONE 2: "Neon Night"
+   Si attiva da solo quando e' aperta la Stagione 2 (attributo html[data-s="2"]).
+   Per cambiare i colori modifica le variabili qui sotto.
+   ========================================================== */
+html[data-s="2"]{
+  --bg:#07050f; --p1:#120d22; --p2:#1b1433; --line:#33285c;
+  --tx:#f5f1ff; --mut:#a39bd0; --dark:#07050f;
+  --blue:#19e6ff; --yellow:#c6ff3d; --red:#ff2bd6; --green:#ff8a1f;
+  color-scheme:dark;
+}
+html[data-s="2"] body{
+  background-image:
+    radial-gradient(900px 420px at 50% -120px,#ff2bd633,transparent 70%),
+    radial-gradient(700px 380px at 100% 12%,#19e6ff22,transparent 70%),
+    linear-gradient(#ffffff08 1px,transparent 1px),
+    linear-gradient(90deg,#ffffff08 1px,transparent 1px);
+  background-size:auto,auto,44px 44px,44px 44px;
+  background-attachment:fixed;
+}
+html[data-s="2"] .top{background:#07050fee}
+html[data-s="2"] .brand b{color:#fff;text-shadow:0 0 18px #ff2bd6aa}
+html[data-s="2"] .brand i{-webkit-text-stroke-color:#19e6ff;filter:drop-shadow(0 0 8px #19e6ff88)}
+html[data-s="2"] .strip{height:5px;background:linear-gradient(90deg,#19e6ff,#c6ff3d,#ff8a1f,#ff2bd6);box-shadow:0 0 14px #ff2bd699}
+html[data-s="2"] .strip i{background:transparent!important}
+html[data-s="2"] nav a[aria-current=page],html[data-s="2"] .seas a[aria-current=true],html[data-s="2"] .seas a[aria-current=page]{background:linear-gradient(90deg,#19e6ff,#ff2bd6);color:#07050f;border-color:transparent}
+html[data-s="2"] .h1,html[data-s="2"] .tbig{text-shadow:0 0 28px #ff2bd655}
+html[data-s="2"] .tstay{-webkit-text-stroke-color:#19e6ff;filter:drop-shadow(0 0 10px #19e6ff99)}
+html[data-s="2"] .panel,html[data-s="2"] .alb,html[data-s="2"] .award,html[data-s="2"] .pcard{box-shadow:inset 0 0 0 1px #33285c}
+html[data-s="2"] .btn{background:linear-gradient(90deg,#19e6ff,#ff2bd6);color:#07050f}
+html[data-s="2"] .btn.alt{background:transparent;color:var(--tx);box-shadow:inset 0 0 0 2px #19e6ff}
+html[data-s="2"] .tgrid span{border-top-color:#ff2bd6}
+html[data-s="2"] .tgrid b{color:#19e6ff}

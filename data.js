@@ -142,7 +142,7 @@ musica: { file: "musica/Placebo-Every Me Every You.mp3", titolo: "Placebo-Every 
     },
    4: {
       giroVeloce: { pilota: "Nihholo", tempo: "1:16,473" },
-      pole: "giusmacher22",
+      pole: "Giusmacher22",
       arrivo: [
         ["Nihholo", "6:41,156"],
         ["Risorto", "+5,119"],

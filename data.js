@@ -39,7 +39,7 @@ window.APEX = {
     { nick: "Nihholo",       squadra: "nj" },
     { nick: "Jarjtodt81",    squadra: "nj" },
     { nick: "Risorto",       squadra: "lion" },
-    { nick: "Giusmacher2",   squadra: "lion" },
+    { nick: "Giusmacher22",   squadra: "lion" },
     { nick: "RobstregMN",    squadra: "raptor" },
     { nick: "BatSciscio1",   squadra: "raptor" },
     { nick: "SaettaMcFabri", squadra: "eagle" },
@@ -75,7 +75,7 @@ window.APEX = {
       ["SaettaMcFabri", "1:05,444"],
       ["Patabomber",    "1:05,818"],
       ["BatSciscio1",   "1:06,343"],
-      ["Giusmacher2",   "1:08,078"],
+      ["Giusmacher22",   "1:08,078"],
       ["Jarjtodt81",    "1:08,081"]
     ]
   },
@@ -107,7 +107,7 @@ musica: { file: "musica/Placebo-Every Me Every You.mp3", titolo: "Placebo-Every 
         ["BatSciscio1",    "+12,784"],
         ["SaettaMcFabri", "+14,176"],
         ["RobstregMN",    "+22,612"],
-        ["Giusmacher2",   "+26,089"],
+        ["Giusmacher22",   "+26,089"],
         ["Jarjtodt81",   "+32,441"],
         ["Patabomber",    "+33,996"]
       ]
@@ -121,7 +121,7 @@ musica: { file: "musica/Placebo-Every Me Every You.mp3", titolo: "Placebo-Every 
         ["SaettaMcFabri", "+22,929"],
         ["RobstregMN", "+26,064"],
         ["BatSciscio1", "+29,182"],
-        ["Giusmacher2", "+36,476"],
+        ["Giusmacher22", "+36,476"],
         ["Jarjtodt81", "+37,354"],
         ["Patabomber", "+38,894"]
       ]
@@ -137,7 +137,7 @@ musica: { file: "musica/Placebo-Every Me Every You.mp3", titolo: "Placebo-Every 
         ["Patabomber", "+20,415"],
         ["SaettaMcFabri", "+22,220"],
         ["Jarjtodt81", "+28,681"],
-        ["Giusmacher2", "+30,525"]
+        ["Giusmacher22", "+30,525"]
       ]
     },
    4: {

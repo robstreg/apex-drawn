@@ -22,10 +22,10 @@ window.STAGIONE_CORRENTE = 1;
    a destra quello che vuoi tu. Togli le // davanti alle righe che vuoi usare.
    Cosi' non li perdi quando aggiorni app.js. */
 window.ETICHETTE = {
-  // "driver standings": "Classifica piloti",
-  // "constructor standings": "Classifica costruttori",
+   "driver standings": "Classifica piloti",
+  "constructor standings": "Classifica costruttori",
   // "teams": "Squadre",
-  // "race results": "Risultati",
-  // "statistics": "Statistiche",
-  // "calendar": "Calendario",
+  "race results": "Risultati gare",
+  "statistics": "Statistiche",
+  "calendar": "Calendario",
 };

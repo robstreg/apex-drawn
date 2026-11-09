@@ -147,8 +147,8 @@ musica: { file: "musica/Placebo-Every Me Every You.mp3", titolo: "Placebo-Every 
         ["Nihholo", "6:41,156"],
         ["Risorto", "+5,119"],
         ["BatSciscio1", "+10,054"],
-        ["Giusmacher2", "+18,366"],
         ["RobstregMN", "+12,034"],
+        ["Giusmacher22", "+18,366"],
         ["Jarjtodt81", "+24,518"],
         ["SaettaMcFabri", "+26,032"],
         ["Patabomber", "+31,103"]

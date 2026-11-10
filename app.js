@@ -1047,7 +1047,7 @@ function qCombo(ids) {
   const p = qProb(ids), q = qQuota(p, ids.length > 1); let note = '';
   if (ids.length > 1) {
     if (q == null) note = 'Queste due condizioni non possono avverarsi insieme (o quasi): scegline altre.';
-        else if (ids.some((_, k) => Math.abs(p - qProb(ids.filter((__, j) => j !== k))) < 1e-9)) note = 'Una condizione è già compresa nelle altre: non aggiunge nulla alla quota, ti basta toglierla.'; if (Math.abs(p - pa) < 1e-9 || Math.abs(p - pb) < 1e-9) note = 'Una condizione è già compresa nell\'altra: la quota non cambia, ti basta giocarne una.'; }
+    else if (ids.some((_, k) => Math.abs(p - qProb(ids.filter((__, j) => j !== k))) < 1e-9)) note = 'Una condizione è già compresa nelle altre: non aggiunge nulla alla quota, ti basta toglierla.';
   }
   return { p, q, note, bad: q == null };
 }

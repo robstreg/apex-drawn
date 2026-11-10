@@ -1167,7 +1167,7 @@ document.addEventListener('input', e => {
 
 /* ---------- router ---------- */
 const NAV_FULL = [['home', 'Home'], ['driver-standings', 'Driver Standings'], ['constructor-standings', 'Constructor Standings'], ['teams', 'Teams'], ['qualifiche', 'Qualifiche'],
-  ['race-results', 'Race Results'], ['statistics', 'Statistics'], ['pronostici', 'Pronostici'], ['quote', 'Quote'], ['calendar', 'Calendar'], ['giornale', 'Giornale'], ['regolamento', 'Regolamento'], ['albo', "Albo d'oro"]];
+  ['race-results', 'Race Results'], ['statistics', 'Statistics'], ['quote', 'Quote'], ['calendar', 'Calendar'], ['giornale', 'Giornale'], ['regolamento', 'Regolamento'], ['albo', "Albo d'oro"]];
 const NAVALL = NAV_FULL.map(n => [n[0], L(n[1])]);
 const NAV = NAVALL.filter(n => (!TEASER || n[0] === 'home') && !(SEAS.length > 1 && n[0] === 'albo') && !(n[0] === 'quote' && !qOn()));
 if (SEAS.length > 1) {

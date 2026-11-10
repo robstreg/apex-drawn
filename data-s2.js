@@ -48,7 +48,7 @@ window.APEX_S2 = {
   qualifiche: { circuito: "", data: "", nota: "", risultati: [] },
   giornale: [],
   commenti: { url: "" },
-  musica: { file: "", titolo: "" },
+  musica: { file: "musica/The_Chemical_Brothers_-_Hey_Boy_Hey_Girl", titolo: "The Chemical Brothers-Hey Boy Hey Girl" },
   pronostici: {},
   risultati: {},
   penalita: [],

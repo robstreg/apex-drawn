@@ -1026,6 +1026,7 @@ function qLeg(id) {
   if (t === 'win') { fn = i => P[i * nD + a] === 0; label = p[1] + ' vince il GP'; }
   else if (t === 'pod') { fn = i => P[i * nD + a] < 3; label = p[1] + ' sul podio'; }
   else if (t === 'sec') { fn = i => P[i * nD + a] === 1; label = p[1] + ' chiude secondo'; }
+  else if (t === 'ter') { fn = i => P[i * nD + a] === 2; label = p[1] + ' chiude terzo'; }
   else if (t === 'last') { fn = i => P[i * nD + a] === nD - 1; label = p[1] + ' chiude ultimo'; }
   else if (t === 'duel') { fn = i => P[i * nD + a] < P[i * nD + b]; label = p[1] + ' batte ' + p[2]; }
   else if (t === 'gap') { fn = i => P[i * nD + a] < P[i * nD + b] && (S2[i * nD + b] - S2[i * nD + a]) * k > x; label = p[1] + ' batte ' + p[2] + ' di oltre ' + x + ' s'; }
@@ -1046,7 +1047,7 @@ function qCombo(ids) {
   const p = qProb(ids), q = qQuota(p, ids.length > 1); let note = '';
   if (ids.length > 1) {
     if (q == null) note = 'Queste due condizioni non possono avverarsi insieme (o quasi): scegline altre.';
-    else { const pa = qProb([ids[0]]), pb = qProb([ids[1]]); if (Math.abs(p - pa) < 1e-9 || Math.abs(p - pb) < 1e-9) note = 'Una condizione è già compresa nell\'altra: la quota non cambia, ti basta giocarne una.'; }
+        else if (ids.some((_, k) => Math.abs(p - qProb(ids.filter((__, j) => j !== k))) < 1e-9)) note = 'Una condizione è già compresa nelle altre: non aggiunge nulla alla quota, ti basta toglierla.'; if (Math.abs(p - pa) < 1e-9 || Math.abs(p - pb) < 1e-9) note = 'Una condizione è già compresa nell\'altra: la quota non cambia, ti basta giocarne una.'; }
   }
   return { p, q, note, bad: q == null };
 }
@@ -1058,7 +1059,7 @@ pages.quote = function () {
   if (!M) return warnBox() + head('Quote') + '<section class="panel soon"><h2 class="h2">Quote in arrivo</h2><p class="muted">Le quote si calcolano dai risultati: saranno disponibili dopo il primo GP.</p></section>';
   if (!gp || gp > TOTAL) return warnBox() + head('Quote') + '<section class="panel soon"><h2 class="h2">Campionato concluso</h2><p class="muted">Non ci sono altri GP su cui giocare.</p></section>';
   const closed = qClosed(), names = M.names;
-  const cells = names.map(k => ({ k, win: qQuota(qProb(['win|' + k])), pod: qQuota(qProb(['pod|' + k])), sec: qQuota(qProb(['sec|' + k])), last: qQuota(qProb(['last|' + k])) }));
+  const cells = names.map(k => ({ k, win: qQuota(qProb(['win|' + k])), pod: qQuota(qProb(['pod|' + k])), sec: qQuota(qProb(['sec|' + k])), ter: qQuota(qProb(['ter|' + k])), last: qQuota(qProb(['last|' + k])) }));
   cells.sort((x, y) => (x.win || 999) - (y.win || 999) || (x.pod || 999) - (y.pod || 999));
   if (!QS.a || !names.includes(QS.a)) { QS.a = cells[0].k; QS.b = cells[1].k; }
   if (QS.b === QS.a) QS.b = names.find(k => k !== QS.a);
@@ -1067,8 +1068,8 @@ pages.quote = function () {
   const info = '<section class="panel"><h2 class="h2">GP ' + gp + (cal.nome && !/^GP\s*\d+$/i.test(cal.nome) ? ' - ' + esc(cal.nome) : '') + '</h2><p class="muted">Si gioca con <b>gettoni virtuali</b>: nessun valore reale, solo gloria. Le quote si ricalcolano dopo ogni GP in base all\'andamento del campionato.' +
     (closed ? ' <b>Le giocate per questo GP sono chiuse.</b>' : closeTxt ? ' Si può giocare fino a ' + esc(closeTxt) + '.' : '') + '</p>' +
     (S.nextGrid && gp === S.nextRound ? '<p class="muted">Griglia di partenza: ' + S.nextGrid.map((k, i) => (i + 1) + '° ' + esc(k)).join(', ') + '.</p>' : '') + '</section>';
-  const table = '<section class="sec"><h2 class="h2">Quote del GP</h2><p class="muted" style="margin-bottom:10px">Tocca una quota per aggiungerla alla giocata.</p><div class="tw"><table class="qt"><thead><tr><th>Pilota</th><th>Vincitore</th><th>Podio</th><th>2° posto</th><th>Ultimo</th></tr></thead><tbody>' +
-    cells.map(r => '<tr><td><span class="who">' + esc(r.k) + '</span></td><td>' + qCell('win|' + r.k, r.win) + '</td><td>' + qCell('pod|' + r.k, r.pod) + '</td><td>' + qCell('sec|' + r.k, r.sec) + '</td><td>' + qCell('last|' + r.k, r.last) + '</td></tr>').join('') + '</tbody></table></div></section>';
+  const table = '<section class="sec"><h2 class="h2">Quote del GP</h2><p class="muted" style="margin-bottom:10px">Tocca una quota per aggiungerla alla giocata.</p><div class="tw"><table class="qt"><thead><tr><th>Pilota</th><th>Vincitore</th><th>Podio</th><th>2° posto</th><th>3° posto</th><th>Ultimo</th></tr></thead><tbody>' +
+    cells.map(r => '<tr><td><span class="who">' + esc(r.k) + '</span></td><td>' + qCell('win|' + r.k, r.win) + '</td><td>' + qCell('pod|' + r.k, r.pod) + '</td><td>' + qCell('sec|' + r.k, r.sec) + '</td><td>' + qCell('ter|' + r.k, r.ter) + '</td><td>' + qCell('last|' + r.k, r.last) + '</td></tr>').join('') + '</tbody></table></div></section>';
   const opt = (sel, ex) => names.filter(k => k !== ex).map(k => '<option' + (k === sel ? ' selected' : '') + '>' + esc(k) + '</option>').join('');
   const xs = [3, 5, 10, 15, 20, 30].map(v => '<option value="' + v + '"' + (v === QS.x ? ' selected' : '') + '>' + v + ' secondi</option>').join('');
   const gid = ['duel|' + QS.a + '|' + QS.b, 'gap|' + QS.a + '|' + QS.b + '|' + QS.x, 'gapin|' + QS.a + '|' + QS.b + '|' + QS.x, 'duel|' + QS.b + '|' + QS.a];
@@ -1079,7 +1080,7 @@ pages.quote = function () {
   const maxL = +c.maxLegs || 2;
   const build = '<section class="sec"><h2 class="h2">La tua giocata</h2><div class="panel">' + (QS.msg ? '<p class="note">' + esc(QS.msg) + '</p>' : '') +
     (QS.legs.length ? '<ul class="qlegs">' + QS.legs.map(id => '<li><span>' + esc(qLeg(id).label) + '</span><button type="button" class="qx" data-qxleg="' + esc(id) + '" aria-label="Togli">×</button></li>').join('') + '</ul>' +
-      (QS.legs.length > 1 ? '<p class="muted">Giocata concatenata: vinci solo se si avverano <b>entrambe</b>. La quota è calcolata sulla probabilità congiunta.</p>' : '<p class="muted">Puoi concatenare una seconda condizione (massimo ' + maxL + ').</p>') +
+      (QS.legs.length > 1 ? '<p class="muted">Giocata concatenata: vinci solo se si avverano <b>tutte</b> le condizioni. La quota è calcolata sulla probabilità congiunta.</p>' : '<p class="muted">Puoi concatenare altre condizioni (massimo ' + maxL + ').</p>') +
       (cb.note ? '<p class="note">' + esc(cb.note) + '</p>' : '') +
       (cb.bad ? '' : '<div class="qrow"><div class="qbig">Quota <b>' + fmtQ(cb.q) + '</b></div><label>Puntata (gettoni)<input type="number" id="qstake" min="1" max="' + (+c.stakeMax || 1000) + '" step="1" value="' + esc(QS.stake) + '"></label><div class="qbig">Vincita <b id="qwin">' + fmtG(cb.q * stake) + '</b></div></div><button type="button" class="btn" data-qadd' + (closed ? ' disabled' : '') + '>Aggiungi alla schedina</button>')
       : '<p class="muted">Nessuna condizione scelta: tocca le quote qui sopra.</p>') + '</div></section>';

@@ -98,6 +98,15 @@ musica: { file: "musica/Placebo-Every Me Every You.mp3", titolo: "Placebo-Every 
   pronostici: {
     // 3: { "Nome": ["Primo", "Secondo", "Terzo"], },
   },
+
+ /* ---- QUOTE E SCHEDINA (gettoni virtuali) ----
+     Per attivare la pagina Quote lascia questo blocco; per nasconderla cancellalo
+     (o metti attiva: false). gp: 0 = si gioca sempre sul prossimo GP.
+     chiusura: "AAAA-MM-GG HH:MM" ora italiana, dopo la quale non si gioca piu'.
+     tempoVincitore: secondi di gara del vincitore (0 = media dei GP gia' corsi). */
+  quote: { attiva: true, gp: 0, chiusura: "", tempoVincitore: 0, margine: 10, maxLegs: 2, maxGiocate: 6, stakeMax: 1000, stakeDef: 10 },
+
+/* risultati campionato */
   risultati: {
     1: {
      giroVeloce: { pilota: "Nihholo", tempo: "na" },     // esempio: { pilota: "Risorto", tempo: "1:03,412" }

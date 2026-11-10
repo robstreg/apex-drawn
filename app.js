@@ -250,10 +250,10 @@ function compute() {
   return { warns, rounds, races, played, lastRound, nextRound, nextGrid, drivers, teams, hist, awards, title, remaining, pron };
 }
 const TEASER = !(D.piloti && D.piloti.length);
-const S = TEASER ? { warns: [], rounds: [], races: {}, played: 0, lastRound: 0, nextRound: 1, drivers: [], teams: [], hist: [], awards: [], title: null, remaining: TOTAL, pron: { rounds: [], ranking: [], byRound: {} } } : compute();
+let S = TEASER ? { warns: [], rounds: [], races: {}, played: 0, lastRound: 0, nextRound: 1, drivers: [], teams: [], hist: [], awards: [], title: null, remaining: TOTAL, pron: { rounds: [], ranking: [], byRound: {} } } : compute();
 
 /* ---------- componenti ---------- */
-const VERSION = '2026-11-09';
+const VERSION = '2026-11-11';
 const EXTS = ['jpg', 'JPG', 'jpeg', 'JPEG', 'png', 'PNG', 'webp'];
 function cands(base, explicit) { return explicit ? [explicit] : EXTS.map(e => base + '.' + e); }
 function gpFoto(n) { const c = D.calendario.find(x => x.n === n) || {}; return cands(BASE + 'foto/gp-' + n, c.foto); }
@@ -344,7 +344,7 @@ pages.home = function () {
     (S.nextGrid ? gridList(S.nextGrid) + '<p class="note">' + (S.played ? 'Inversa rispetto all\'arrivo del GP precedente' : 'Inversa rispetto alle qualifiche mondiale') + ': l\'ultimo parte in pole.</p>' :
       '<p class="empty">' + (S.nextRound ? 'La griglia del primo GP viene decisa prima della gara.' : 'Campionato concluso.') + '</p>') + '</section>';
 
-  return '<div class="home">' + warnBox() + '<div class="hero">' + hero + tower + '</div>' + (S.played ? '<div class="sec">' + titleCard() + '</div>' : '') + '<div class="grid3 sec">' + last + cons + grid + '</div></div>';
+  return '<div class="home">' + warnBox() + '<div class="hero">' + hero + tower + '</div>' + pBanner() + (S.played ? '<div class="sec">' + titleCard() + '</div>' : '') + '<div class="grid3 sec">' + last + cons + grid + '</div></div>';
 };
 
 function perCells(per, drop) {
@@ -704,21 +704,102 @@ pages.driver = function (sel) {
 };
 
 /* ---------- pronostici ---------- */
+/* pronostici online: moduli nel sito, salvati in un Foglio Google (vedi README, file pronostici-script.gs) */
+const PO = { state: 'idle', online: [], manual: null, msg: null };
+function pCfg() {
+  const c = D.pronosticiOnline || {};
+  if (!/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(c.url || '')) return null;
+  return { url: c.url, gp: +c.gp || S.nextRound || 0, chiusura: String(c.chiusura || '') };
+}
+function pClosed(n) {
+  const c = pCfg(); if (!c) return true;
+  if (S.races[n] || n < c.gp) return true;
+  if (n === c.gp) return !!c.chiusura && Date.now() >= Date.parse(c.chiusura.replace(' ', 'T'));
+  return false;
+}
+function pOpenNow() { const c = pCfg(); return c && c.gp >= 1 && c.gp <= TOTAL && !pClosed(c.gp) ? c : null; }
+function pMerge() {
+  if (!PO.manual) PO.manual = JSON.parse(JSON.stringify(D.pronostici || {}));
+  const m = JSON.parse(JSON.stringify(PO.manual));
+  PO.online.forEach(x => { const g = m[x.gp] = m[x.gp] || {}; if (!(x.nome in g)) g[x.nome] = x.p; });
+  D.pronostici = m; S = compute(); window.__APEX_STATE = S;
+}
+function pSnap() { const f = $('#pf'); return f ? [].map.call(f.elements, e => e.value) : null; }
+function pRestore(v) { const f = $('#pf'); if (f && v && v.length === f.elements.length) { [].forEach.call(f.elements, (e, i) => { if (e.type !== 'submit') e.value = v[i]; }); pSelSync(); } }
+function rerender() { const y = window.scrollY, v = pSnap(); render(); pRestore(v); window.scrollTo(0, y); }
+function pLoad() {
+  const c = pCfg(); if (!c || TEASER) return;
+  PO.state = 'loading';
+  fetch(c.url + '?azione=lista&s=' + CUR.id).then(r => r.json()).then(x => {
+    if (!x || !x.ok || !Array.isArray(x.dati)) throw new Error('risposta');
+    PO.online = x.dati; PO.state = 'ok'; pMerge();
+  }).catch(() => { PO.state = 'err'; }).then(() => {
+    const pg = location.hash.replace(/^#\/?/, '').split('/')[0];
+    if (['', 'home', 'pronostici', 'statistics'].includes(pg)) rerender();
+  });
+}
+function pSelSync(ev) {
+  /* se scegli un pilota già scelto in un altro posto, quell'altro posto si svuota (così si possono scambiare) */
+  const s = ev && ev.target; if (!s || s.tagName !== 'SELECT' || !s.value) return;
+  [].forEach.call(document.querySelectorAll('#pf select'), o => { if (o !== s && o.value === s.value) o.value = ''; });
+}
+function pFmtClose(c) { if (!c.chiusura) return ''; const d = new Date(c.chiusura.replace(' ', 'T')); return isNaN(d) ? '' : d.toLocaleString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }); }
+function pFormHtml(c) {
+  const opts = '<option value="">Scegli un pilota</option>' + D.piloti.map(p => '<option>' + esc(p.nick) + '</option>').join('');
+  const cl = pFmtClose(c);
+  return '<section class="panel pform"><h2 class="h2">Il tuo pronostico: GP ' + c.gp + '</h2>' +
+    '<p class="muted" style="margin:-6px 0 6px">Scegli i tre piloti che pensi saliranno sul podio, in ordine. ' + (cl ? 'Puoi inviarlo o cambiarlo fino a ' + esc(cl) + ': basta rimandarlo con lo stesso nome.' : 'Puoi cambiarlo rimandandolo con lo stesso nome.') + '</p>' +
+    '<form id="pf" class="cform" autocomplete="off" novalidate><label for="pnome">Il tuo nome</label><input id="pnome" maxlength="24" placeholder="Come vuoi comparire in classifica">' +
+    [1, 2, 3].map(i => '<label for="pp' + i + '">' + i + '° posto</label><select id="pp' + i + '">' + opts + '</select>').join('') +
+    '<input name="sito" class="hp" tabindex="-1" aria-hidden="true" autocomplete="off"><button class="btn" type="submit" style="margin-top:16px">Invia pronostico</button>' +
+    '<p id="pmsg" role="status" aria-live="polite" class="pmsg">' + (PO.msg ? esc(PO.msg.t) : '') + '</p></form></section>';
+}
+function pInit() {
+  const f = $('#pf'); if (!f) return;
+  const nm = store('apex_pron_name'); if (nm && !$('#pnome').value) $('#pnome').value = nm;
+  const say = (t, bad) => { const m = $('#pmsg'); m.textContent = t; m.className = 'pmsg ' + (bad ? 'bad' : 'ok'); };
+  if (PO.msg) { const m = $('#pmsg'); m.className = 'pmsg ' + (PO.msg.bad ? 'bad' : 'ok'); PO.msg = null; }
+  f.addEventListener('change', pSelSync);
+  f.addEventListener('submit', ev => {
+    ev.preventDefault(); const c = pOpenNow(); if (!c) { say('I pronostici sono chiusi.', true); return; }
+    const nome = $('#pnome').value.trim(), p = [1, 2, 3].map(i => $('#pp' + i).value);
+    if (!nome) { say('Scrivi il tuo nome.', true); return; }
+    if (p.some(x => !x)) { say('Scegli tutti e tre i piloti.', true); return; }
+    if (/https?:\/\/|www\./i.test(nome)) { say('I link non sono ammessi.', true); return; }
+    const btn = f.querySelector('button'); btn.disabled = true; say('Invio in corso...');
+    const q = new URLSearchParams({ azione: 'invia', s: CUR.id, gp: c.gp, nome, p1: p[0], p2: p[1], p3: p[2], sito: f.elements.sito.value });
+    fetch(c.url + '?' + q).then(r => r.json()).then(res => {
+      if (!res || !res.ok) { say('Non inviato: ' + ((res && res.errore) || 'riprova'), true); btn.disabled = false; return; }
+      store('apex_pron_name', nome);
+      PO.online = PO.online.filter(x => !(x.gp === c.gp && x.nome.toLowerCase() === nome.toLowerCase())); PO.online.push({ gp: c.gp, nome, p });
+      PO.msg = { t: res.sostituito ? 'Pronostico aggiornato. Grazie, ' + nome + '!' : 'Pronostico inviato. Grazie, ' + nome + '!' };
+      pMerge(); rerender();
+    }).catch(() => { say('Non riesco a inviare ora. Controlla la connessione e riprova.', true); btn.disabled = false; });
+  });
+}
+function pBanner() {
+  const c = pOpenNow(); if (!c) return '';
+  const cl = pFmtClose(c);
+  return '<a class="pban" href="#/pronostici"><b>Pronostici aperti: GP ' + c.gp + '</b><span>' + (cl ? 'fino a ' + esc(cl) : 'indovina il podio') + '</span><em>Gioca</em></a>';
+}
 pages.pronostici = function (sel) {
-  const P = S.pron, PP = P.PP;
+  const P = S.pron, PP = P.PP, c = pCfg(), open = pOpenNow();
+  if (!P.rounds.length && !c) return warnBox() + head('Pronostici') + '<section class="panel soon"><h2 class="h2">Stiamo lavorando per voi</h2><p class="muted">La sezione pronostici sta per arrivare. Restate sintonizzati!</p></section>';
   const rules = '<section class="panel"><h2 class="h2">Come si gioca</h2><p class="muted" style="margin:0 0 10px">Prima del GP ognuno indica i tre piloti che pensa saliranno sul podio, in ordine.</p><div class="pts">' +
     [['Vincitore esatto', PP.vincitore], ['Secondo esatto', PP.secondo], ['Terzo esatto', PP.terzo], ['Pilota nel podio ma in altra posizione', PP.nelPodio], ['Bonus podio perfetto', PP.podioPerfetto]].map(x => '<div><b>+' + x[1] + '</b><span>' + x[0] + '</span></div>').join('') + '</div></section>';
-  if (!P.rounds.length) return warnBox() + head('Pronostici') + '<section class="panel soon"><h2 class="h2">Stiamo lavorando per voi</h2><p class="muted">La sezione pronostici sta per arrivare. Restate sintonizzati!</p></section>';
+  const status = c ? (open ? pFormHtml(c) : '<section class="panel"><h2 class="h2">Pronostici chiusi</h2><p class="muted">I pronostici per il GP ' + c.gp + ' sono chiusi' + (S.races[c.gp] ? '.' : ': appena viene inserito il risultato si calcolano i punti.') + ' Quelli per il prossimo GP si apriranno a breve.</p></section>') : '';
+  const load = c && PO.state === 'loading' ? '<p class="note">Carico i pronostici degli altri...</p>' : c && PO.state === 'err' ? '<p class="note">Non riesco a leggere i pronostici già inviati: puoi comunque inviare il tuo.</p>' : '';
+  if (!P.rounds.length) return warnBox() + head('Pronostici', 'Indovina il podio di ogni GP e scala la classifica dei pronostici.') + status + load + '<div class="sec">' + rules + '</div>';
   const rank = '<section class="sec"><h2 class="h2">Classifica pronostici</h2><div class="tw"><table><thead><tr><th>Pos</th><th>Nome</th><th>GP</th><th>Vincitori</th><th>Podi perfetti</th><th class="tot">Punti</th></tr></thead><tbody>' +
     P.ranking.map(x => '<tr><td>' + x.rank + '</td><td><span class="who">' + (drv(x.name) ? nameHtml(x.name) : esc(x.name)) + '</span></td><td>' + x.gp + '</td><td>' + x.wins + '</td><td>' + x.perfect + '</td><td class="tot">' + x.total + '</td></tr>').join('') + '</tbody></table></div></section>';
   let n = +sel; if (!P.byRound[n]) n = P.rounds[P.rounds.length - 1];
   const tabs = '<nav class="tabs" aria-label="Gran Premi">' + P.rounds.map(k => '<a href="#/pronostici/' + k + '"' + (k === n ? ' aria-current="true"' : '') + '>GP ' + k + '</a>').join('') + '</nav>';
-  const R = P.byRound[n], lab = { exact: 'Esatto', podio: 'Nel podio', no: 'Fuori' };
-  const real = R.top ? '<p class="muted">Podio reale: ' + R.top.map((k, i) => (i + 1) + '° ' + esc(k)).join(', ') + '</p>' : '<p class="muted">GP non ancora disputato: i pronostici sono scritti, i punti arrivano dopo la gara.</p>';
-  const cards = R.entries.map(e => '<article class="pcard"><header><b>' + esc(e.name) + '</b><span class="ppt">' + (e.score ? '+' + e.score.pts : '...') + '</span></header><ol>' +
+  const R = P.byRound[n], lab = { exact: 'Esatto', podio: 'Nel podio', no: 'Fuori' }, hidden = !pClosed(n);
+  const real = R.top ? '<p class="muted">Podio reale: ' + R.top.map((k, i) => (i + 1) + '° ' + esc(k)).join(', ') + '</p>' : hidden ? '<p class="muted">I pronostici degli altri si vedono quando il GP chiude, per non copiarsi a vicenda. Hanno già giocato: ' + R.entries.map(e => esc(e.name)).join(', ') + '.</p>' : '<p class="muted">GP non ancora disputato: i punti arrivano dopo la gara.</p>';
+  const cards = hidden ? '' : R.entries.map(e => '<article class="pcard"><header><b>' + esc(e.name) + '</b><span class="ppt">' + (e.score ? '+' + e.score.pts : '...') + '</span></header><ol>' +
     e.pick.map((k, i) => '<li class="' + (e.score ? e.score.det[i] : '') + '"><span>' + (i + 1) + '°</span> ' + esc(k) + (e.score ? '<em>' + lab[e.score.det[i]] + '</em>' : '') + '</li>').join('') + '</ol>' +
     (e.score && e.score.perfect ? '<p class="perf">Podio perfetto!</p>' : '') + '</article>').join('');
-  return warnBox() + head('Pronostici', 'Indovina il podio di ogni GP e scala la classifica dei pronostici.') + rank + '<h2 class="h2 sec">Pronostici GP ' + n + '</h2>' + tabs + real + '<div class="pgrid">' + cards + '</div>' + rules;
+  return warnBox() + head('Pronostici', 'Indovina il podio di ogni GP e scala la classifica dei pronostici.') + status + load + rank + '<h2 class="h2 sec">Pronostici GP ' + n + '</h2>' + tabs + real + '<div class="pgrid">' + cards + '</div>' + rules;
 };
 
 pages.qualifiche = function () {
@@ -852,6 +933,14 @@ async function runDiag() {
   try { const ix = await (await fetch('index.html', { cache: 'no-store' })).text();
     if (/IL-TUO-SITO/.test(ix)) add('info', 'Anteprima WhatsApp', 'In index.html c\'e\' ancora IL-TUO-SITO: sostituiscilo con l\'indirizzo vero del sito (es. nomeutente.github.io/apex-drawn) nelle due righe og:image e og:url, altrimenti il link non mostrera\' l\'immagine in anteprima.');
     else add('ok', 'Anteprima WhatsApp', 'Indirizzo del sito impostato in index.html.'); } catch (e) {}
+  const pc = D.pronosticiOnline;
+  if (pc && pc.url) {
+    if (!pCfg()) add('bad', 'Pronostici online', 'L\'indirizzo in pronosticiOnline non ha il formato giusto: deve essere https://script.google.com/macros/s/.../exec e finire con /exec.');
+    else fetch(pc.url + '?azione=ping').then(r => r.json()).then(x => {
+      if (x && x.ok) add('ok', 'Pronostici online', 'Lo script Google risponde correttamente. GP aperto: ' + pCfg().gp + (pCfg().chiusura ? ', chiusura ' + pCfg().chiusura : ', senza orario di chiusura') + '.');
+      else add('bad', 'Pronostici online', 'Lo script ha risposto in modo strano. Controlla di aver incollato lo script giusto e di aver fatto una nuova versione del deployment.');
+    }).catch(() => add('bad', 'Pronostici online', 'Lo script non risponde. Di solito il deployment non e\' impostato su "Chi ha accesso: Chiunque", oppure l\'indirizzo e\' sbagliato.'));
+  } else add('info', 'Pronostici online', 'Non attivi (manca l\'indirizzo in pronosticiOnline): i pronostici si inseriscono a mano con aggiungi-gp.html.');
   if (D.pronostici && Object.keys(D.pronostici).length) add(S.warns.some(w => /^Pronostici/.test(w)) ? 'bad' : 'ok', 'Pronostici', S.pron.rounds.length + ' GP con pronostici, ' + S.pron.ranking.length + ' partecipanti.');
   else add('info', 'Pronostici', D.pronostici === undefined ? 'Nel data.js manca il blocco "pronostici: { }" (facoltativo): la pagina Pronostici dira\' che non ci sono pronostici.' : 'Nessun pronostico inserito (facoltativo).');
 
@@ -887,11 +976,200 @@ pages.regolamento = function () {
     (s.punti ? '<div class="pts">' + D.punti.map((p, i) => '<div><b>' + p + '</b><span>' + (i + 1) + '°</span></div>').join('') + '</div>' : '') + '</section>').join('') + '</div>';
 };
 
+/* ---------- QUOTE E SCHEDINA (gettoni virtuali) ---------- */
+const QC = () => Object.assign({ attiva: true, gp: 0, chiusura: '', margine: 10, tempoVincitore: 0, maxLegs: 2, maxGiocate: 6, stakeMax: 1000, stakeDef: 10 }, D.quote || {});
+const qOn = () => !!D.quote && D.quote.attiva !== false;
+const QS = { legs: [], giocate: [], nome: '', stake: 0, a: '', b: '', x: 10, msg: '', done: null };
+let QM = null, QKey = '';
+function qGp() { return +QC().gp || S.nextRound || 0; }
+function qClosed() {
+  const c = QC(), n = qGp();
+  if (!n || n > TOTAL || S.races[n]) return true;
+  return !!c.chiusura && Date.now() >= Date.parse(String(c.chiusura).replace(' ', 'T'));
+}
+const fmtQ = v => v == null ? '-' : v.toFixed(2).replace('.', ',');
+const fmtG = v => { const r = Math.round(v * 100) / 100; return (Number.isInteger(r) ? String(r) : r.toFixed(2)).replace('.', ','); };
+function qModel() {
+  const gp = qGp(), key = JSON.stringify(D.risultati) + '|' + gp + '|' + JSON.stringify(D.quote || {});
+  if (QM && QKey === key) return QM;
+  QKey = key; QM = null;
+  const names = D.piloti.map(p => p.nick), nD = names.length;
+  if (!S.rounds.length || nD < 2) return null;
+  const W = [1, 1.3, 1.6, 2.0], hist = {}, winT = [];
+  names.forEach(k => hist[k] = []);
+  S.rounds.forEach(n => {
+    const arr = D.risultati[n].arrivo, w = parseT(arr[0][1]); if (!w) return; winT.push(w);
+    arr.forEach((e, i) => { if (!hist[e[0]]) return; const t = i === 0 ? 0 : parseT(e[1]); if (t != null) hist[e[0]].push(i === 0 ? 0 : t / w * 100); });
+  });
+  const pace = {}, res = [];
+  names.forEach(k => { const v = hist[k].slice(-4); if (!v.length) return; const w = W.slice(-v.length); pace[k] = v.reduce((s, x, i) => s + x * w[i], 0) / w.reduce((a, b) => a + b, 0); v.forEach(x => res.push(x - pace[k])); });
+  const known = Object.values(pace); if (!known.length) return null;
+  const worst = Math.max.apply(null, known);
+  names.forEach(k => { if (pace[k] == null) pace[k] = worst + 1.5; });
+  const sd = Math.max(1.2, Math.sqrt(res.reduce((s, x) => s + x * x, 0) / (res.length || 1)));
+  const tRef = +QC().tempoVincitore || (winT.reduce((a, b) => a + b, 0) / (winT.length || 1)) || 400;
+  let seed = (20261110 + gp * 7919) >>> 0;
+  const rnd = () => { seed = (seed + 0x6D2B79F5) >>> 0; let t = seed; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  const gauss = () => Math.sqrt(-2 * Math.log(rnd() + 1e-12)) * Math.cos(2 * Math.PI * rnd());
+  const N = 20000, sc = new Float32Array(N * nD), pos = new Uint8Array(N * nD), idx = names.map((_, i) => i);
+  for (let i = 0; i < N; i++) {
+    for (let d = 0; d < nD; d++) sc[i * nD + d] = pace[names[d]] + gauss() * sd + (rnd() < 0.03 ? 100 : 0);
+    idx.sort((a, b) => sc[i * nD + a] - sc[i * nD + b]);
+    for (let r = 0; r < nD; r++) pos[i * nD + idx[r]] = r;
+  }
+  QM = { names, nD, N, sc, pos, tRef, gp, ix: k => names.indexOf(k) };
+  return QM;
+}
+function qLeg(id) {
+  const M = qModel(), p = id.split('|'), t = p[0], a = M.ix(p[1]), b = p[2] != null ? M.ix(p[2]) : -1, x = +p[3], nD = M.nD, P = M.pos, S2 = M.sc, k = M.tRef / 100;
+  let fn, label;
+  if (t === 'win') { fn = i => P[i * nD + a] === 0; label = p[1] + ' vince il GP'; }
+  else if (t === 'pod') { fn = i => P[i * nD + a] < 3; label = p[1] + ' sul podio'; }
+  else if (t === 'sec') { fn = i => P[i * nD + a] === 1; label = p[1] + ' chiude secondo'; }
+  else if (t === 'last') { fn = i => P[i * nD + a] === nD - 1; label = p[1] + ' chiude ultimo'; }
+  else if (t === 'duel') { fn = i => P[i * nD + a] < P[i * nD + b]; label = p[1] + ' batte ' + p[2]; }
+  else if (t === 'gap') { fn = i => P[i * nD + a] < P[i * nD + b] && (S2[i * nD + b] - S2[i * nD + a]) * k > x; label = p[1] + ' batte ' + p[2] + ' di oltre ' + x + ' s'; }
+  else { fn = i => P[i * nD + a] < P[i * nD + b] && (S2[i * nD + b] - S2[i * nD + a]) * k <= x; label = p[1] + ' batte ' + p[2] + ' di meno di ' + x + ' s'; }
+  return { id, label, fn, type: t };
+}
+function qProb(ids) {
+  const M = qModel(), fs = ids.map(i => qLeg(i).fn); let c = 0;
+  for (let i = 0; i < M.N; i++) { let ok = true; for (let j = 0; j < fs.length; j++) if (!fs[j](i)) { ok = false; break; } if (ok) c++; }
+  return c / M.N;
+}
+function qQuota(p, combo) {
+  if (p < 0.0003) return null;
+  return Math.max(1.05, Math.min(combo ? 199 : 99, Math.round(100 / (p * (1 + QC().margine / 100))) / 100));
+}
+function qCombo(ids) {
+  if (!ids.length) return null;
+  const p = qProb(ids), q = qQuota(p, ids.length > 1); let note = '';
+  if (ids.length > 1) {
+    if (q == null) note = 'Queste due condizioni non possono avverarsi insieme (o quasi): scegline altre.';
+    else { const pa = qProb([ids[0]]), pb = qProb([ids[1]]); if (Math.abs(p - pa) < 1e-9 || Math.abs(p - pb) < 1e-9) note = 'Una condizione è già compresa nell\'altra: la quota non cambia, ti basta giocarne una.'; }
+  }
+  return { p, q, note, bad: q == null };
+}
+function qRerender() { const y = window.scrollY; $('#app').innerHTML = pages.quote(); window.scrollTo(0, y); }
+function qCell(id, q) { const on = QS.legs.includes(id); return '<button type="button" class="qb' + (on ? ' on' : '') + '" data-leg="' + esc(id) + '"' + (qClosed() ? ' disabled' : '') + '>' + fmtQ(q) + '</button>'; }
+pages.quote = function () {
+  const gp = qGp(), cal = D.calendario.find(c => c.n === gp) || {}, M = qOn() ? qModel() : null, c = QC();
+  if (!qOn()) return warnBox() + head('Quote') + '<section class="panel soon"><h2 class="h2">Stiamo lavorando per voi</h2><p class="muted">Le quote stanno per arrivare. Restate sintonizzati!</p></section>';
+  if (!M) return warnBox() + head('Quote') + '<section class="panel soon"><h2 class="h2">Quote in arrivo</h2><p class="muted">Le quote si calcolano dai risultati: saranno disponibili dopo il primo GP.</p></section>';
+  if (!gp || gp > TOTAL) return warnBox() + head('Quote') + '<section class="panel soon"><h2 class="h2">Campionato concluso</h2><p class="muted">Non ci sono altri GP su cui giocare.</p></section>';
+  const closed = qClosed(), names = M.names;
+  const cells = names.map(k => ({ k, win: qQuota(qProb(['win|' + k])), pod: qQuota(qProb(['pod|' + k])), sec: qQuota(qProb(['sec|' + k])), last: qQuota(qProb(['last|' + k])) }));
+  cells.sort((x, y) => (x.win || 999) - (y.win || 999) || (x.pod || 999) - (y.pod || 999));
+  if (!QS.a || !names.includes(QS.a)) { QS.a = cells[0].k; QS.b = cells[1].k; }
+  if (QS.b === QS.a) QS.b = names.find(k => k !== QS.a);
+  if (!QS.stake) QS.stake = +c.stakeDef || 10;
+  const closeTxt = pFmtClose({ chiusura: String(c.chiusura || '') });
+  const info = '<section class="panel"><h2 class="h2">GP ' + gp + (cal.nome && !/^GP\s*\d+$/i.test(cal.nome) ? ' - ' + esc(cal.nome) : '') + '</h2><p class="muted">Si gioca con <b>gettoni virtuali</b>: nessun valore reale, solo gloria. Le quote si ricalcolano dopo ogni GP in base all\'andamento del campionato.' +
+    (closed ? ' <b>Le giocate per questo GP sono chiuse.</b>' : closeTxt ? ' Si può giocare fino a ' + esc(closeTxt) + '.' : '') + '</p>' +
+    (S.nextGrid && gp === S.nextRound ? '<p class="muted">Griglia di partenza: ' + S.nextGrid.map((k, i) => (i + 1) + '° ' + esc(k)).join(', ') + '.</p>' : '') + '</section>';
+  const table = '<section class="sec"><h2 class="h2">Quote del GP</h2><p class="muted" style="margin-bottom:10px">Tocca una quota per aggiungerla alla giocata.</p><div class="tw"><table class="qt"><thead><tr><th>Pilota</th><th>Vincitore</th><th>Podio</th><th>2° posto</th><th>Ultimo</th></tr></thead><tbody>' +
+    cells.map(r => '<tr><td><span class="who">' + esc(r.k) + '</span></td><td>' + qCell('win|' + r.k, r.win) + '</td><td>' + qCell('pod|' + r.k, r.pod) + '</td><td>' + qCell('sec|' + r.k, r.sec) + '</td><td>' + qCell('last|' + r.k, r.last) + '</td></tr>').join('') + '</tbody></table></div></section>';
+  const opt = (sel, ex) => names.filter(k => k !== ex).map(k => '<option' + (k === sel ? ' selected' : '') + '>' + esc(k) + '</option>').join('');
+  const xs = [3, 5, 10, 15, 20, 30].map(v => '<option value="' + v + '"' + (v === QS.x ? ' selected' : '') + '>' + v + ' secondi</option>').join('');
+  const gid = ['duel|' + QS.a + '|' + QS.b, 'gap|' + QS.a + '|' + QS.b + '|' + QS.x, 'gapin|' + QS.a + '|' + QS.b + '|' + QS.x, 'duel|' + QS.b + '|' + QS.a];
+  const gl = [QS.a + ' batte ' + QS.b, QS.a + ' batte ' + QS.b + ' di oltre ' + QS.x + ' s', QS.a + ' batte ' + QS.b + ' di meno di ' + QS.x + ' s', QS.b + ' batte ' + QS.a];
+  const duel = '<section class="sec"><h2 class="h2">Duelli e distacchi</h2><div class="panel qduel"><div class="qsel"><label>Pilota A<select data-qsel="a">' + opt(QS.a, '') + '</select></label><label>Pilota B<select data-qsel="b">' + opt(QS.b, QS.a) + '</select></label><label>Distacco<select data-qsel="x">' + xs + '</select></label></div><ul class="qopts">' +
+    gid.map((id, i) => '<li><span>' + esc(gl[i]) + '</span>' + qCell(id, qQuota(qProb([id]))) + '</li>').join('') + '</ul><p class="muted" style="margin-top:8px">I secondi sono stimati su un GP di circa ' + Math.round(M.tRef) + ' s di durata per il vincitore.</p></div></section>';
+  const cb = qCombo(QS.legs), stake = Math.max(0, +QS.stake || 0);
+  const maxL = +c.maxLegs || 2;
+  const build = '<section class="sec"><h2 class="h2">La tua giocata</h2><div class="panel">' + (QS.msg ? '<p class="note">' + esc(QS.msg) + '</p>' : '') +
+    (QS.legs.length ? '<ul class="qlegs">' + QS.legs.map(id => '<li><span>' + esc(qLeg(id).label) + '</span><button type="button" class="qx" data-qxleg="' + esc(id) + '" aria-label="Togli">×</button></li>').join('') + '</ul>' +
+      (QS.legs.length > 1 ? '<p class="muted">Giocata concatenata: vinci solo se si avverano <b>entrambe</b>. La quota è calcolata sulla probabilità congiunta.</p>' : '<p class="muted">Puoi concatenare una seconda condizione (massimo ' + maxL + ').</p>') +
+      (cb.note ? '<p class="note">' + esc(cb.note) + '</p>' : '') +
+      (cb.bad ? '' : '<div class="qrow"><div class="qbig">Quota <b>' + fmtQ(cb.q) + '</b></div><label>Puntata (gettoni)<input type="number" id="qstake" min="1" max="' + (+c.stakeMax || 1000) + '" step="1" value="' + esc(QS.stake) + '"></label><div class="qbig">Vincita <b id="qwin">' + fmtG(cb.q * stake) + '</b></div></div><button type="button" class="btn" data-qadd' + (closed ? ' disabled' : '') + '>Aggiungi alla schedina</button>')
+      : '<p class="muted">Nessuna condizione scelta: tocca le quote qui sopra.</p>') + '</div></section>';
+  const tot = QS.giocate.reduce((s, g) => s + g.stake, 0), win = QS.giocate.reduce((s, g) => s + g.win, 0);
+  const slip = '<section class="sec"><h2 class="h2">La tua schedina</h2><div class="panel">' + (QS.giocate.length ? '<ul class="qslip">' + QS.giocate.map((g, i) => '<li><div class="ql">' + g.legs.map(id => '<div>' + esc(qLeg(id).label) + '</div>').join('') + '</div><div class="qn"><span>Quota <b>' + fmtQ(g.q) + '</b></span><span>Puntata <b>' + fmtG(g.stake) + '</b></span><span>Vincita <b>' + fmtG(g.win) + '</b></span></div><button type="button" class="qx" data-qdel="' + i + '" aria-label="Elimina giocata">×</button></li>').join('') + '</ul>' +
+    '<p class="qtot">Puntato <b>' + fmtG(tot) + '</b> · Vincita possibile <b>' + fmtG(win) + '</b></p><label class="qname">Il tuo nome<input type="text" id="qname" maxlength="24" value="' + esc(QS.nome) + '" autocomplete="nickname"></label><button type="button" class="btn" data-qsend' + (closed ? ' disabled' : '') + '>Invia e ottieni la schedina</button><p class="muted" style="margin-top:8px">Riceverai un\'immagine con le tue giocate, le quote e la vincita possibile: conservala, è la tua ricevuta.</p>' : '<p class="muted">Ancora nessuna giocata (massimo ' + (+c.maxGiocate || 6) + ' per schedina).</p>') + '</div></section>';
+  const modal = QS.done ? '<div class="qmodal" role="dialog" aria-modal="true" aria-label="Schedina"><div class="qbox"><img src="' + QS.done.url + '" alt="La tua schedina"><div class="qact"><a class="btn" href="' + QS.done.url + '" download="schedina-' + QS.done.id + '.png">Scarica immagine</a><button type="button" class="btn alt" data-qshare>Condividi</button><button type="button" class="btn alt" data-qnew>Nuova schedina</button></div></div></div>' : '';
+  return warnBox() + head('Quote', 'Quote del GP, duelli, distacchi e giocate concatenate. Gettoni virtuali, nessun valore reale.') + info + table + duel + build + slip + modal;
+};
+function qFont(px, w) { return (w || 700) + ' ' + px + 'px "Barlow Condensed","Arial Narrow",Arial,sans-serif'; }
+function qDraw(slip) {
+  const W = 1080, pad = 56, cv = document.createElement('canvas'), ctx = cv.getContext('2d');
+  const wrap = (txt, maxW, font) => { ctx.font = font; const out = []; let line = ''; txt.split(' ').forEach(w => { const t = line ? line + ' ' + w : w; if (ctx.measureText(t).width > maxW && line) { out.push(line); line = w; } else line = t; }); if (line) out.push(line); return out; };
+  const blocks = slip.giocate.map(g => { const lines = []; g.legs.forEach(id => wrap('• ' + qLeg(id).label, W - pad * 2 - 60, qFont(36, 600)).forEach(l => lines.push(l))); return { g, lines, h: 40 + lines.length * 44 + 70 }; });
+  const H = 300 + blocks.reduce((s, b) => s + b.h + 18, 0) + 230;
+  cv.width = W; cv.height = H;
+  ctx.fillStyle = '#0d0f13'; ctx.fillRect(0, 0, W, H);
+  ['#2f7bff', '#ffc61a', '#ff3d3d', '#25c46a'].forEach((c, i) => { ctx.fillStyle = c; ctx.fillRect(i * W / 4, 0, W / 4, 14); });
+  ctx.fillStyle = '#eef0f5'; ctx.font = qFont(78, 800); ctx.fillText('SAFE SPORT', pad, 112);
+  ctx.fillStyle = '#ffc61a'; ctx.font = qFont(40, 700); ctx.fillText('SCHEDINA · GP ' + slip.gp + (slip.gpNome ? ' · ' + slip.gpNome : ''), pad, 164);
+  ctx.fillStyle = '#8e97aa'; ctx.font = qFont(32, 500); ctx.fillText('Giocatore: ' + slip.nome, pad, 214);
+  ctx.fillText(slip.data + '  ·  Codice ' + slip.id, pad, 254);
+  let y = 290;
+  blocks.forEach(b => {
+    ctx.fillStyle = '#161922'; ctx.fillRect(pad - 16, y, W - pad * 2 + 32, b.h);
+    ctx.fillStyle = b.g.legs.length > 1 ? '#ff3d3d' : '#2f7bff'; ctx.fillRect(pad - 16, y, 8, b.h);
+    ctx.fillStyle = '#eef0f5'; ctx.font = qFont(36, 600);
+    b.lines.forEach((l, i) => ctx.fillText(l, pad + 8, y + 52 + i * 44));
+    const ny = y + 40 + b.lines.length * 44 + 36; ctx.font = qFont(34, 700);
+    ctx.fillStyle = '#8e97aa'; ctx.fillText('Quota', pad + 8, ny); ctx.fillStyle = '#eef0f5'; ctx.fillText(fmtQ(b.g.q), pad + 135, ny);
+    ctx.fillStyle = '#8e97aa'; ctx.fillText('Puntata', pad + 330, ny); ctx.fillStyle = '#eef0f5'; ctx.fillText(fmtG(b.g.stake), pad + 480, ny);
+    ctx.fillStyle = '#8e97aa'; ctx.fillText('Vincita', pad + 640, ny); ctx.fillStyle = '#25c46a'; ctx.fillText(fmtG(b.g.win), pad + 790, ny);
+    y += b.h + 18;
+  });
+  const tot = slip.giocate.reduce((s, g) => s + g.stake, 0), win = slip.giocate.reduce((s, g) => s + g.win, 0);
+  ctx.fillStyle = '#eef0f5'; ctx.fillRect(pad - 16, y + 10, W - pad * 2 + 32, 4);
+  ctx.font = qFont(44, 700); ctx.fillStyle = '#eef0f5'; ctx.fillText('Puntata totale  ' + fmtG(tot), pad, y + 78);
+  ctx.fillStyle = '#ffc61a'; ctx.fillText('Vincita possibile  ' + fmtG(win), pad, y + 134);
+  ctx.fillStyle = '#8e97aa'; ctx.font = qFont(26, 500);
+  ctx.fillText('Gettoni virtuali: nessun valore reale. Quote fissate al momento dell\'invio.', pad, y + 186);
+  return cv.toDataURL('image/png');
+}
+async function qSend() {
+  const nome = (QS.nome || '').trim();
+  if (nome.length < 2) { QS.msg = 'Scrivi il tuo nome prima di inviare.'; return qRerender(); }
+  if (!QS.giocate.length || qClosed()) return;
+  const cal = D.calendario.find(c => c.n === qGp()) || {};
+  const id = (Date.now().toString(36) + Math.random().toString(36).slice(2, 5)).toUpperCase().slice(-7);
+  const slip = { id, nome, gp: qGp(), gpNome: /^GP\s*\d+$/i.test(cal.nome || '') ? '' : (cal.nome || ''), data: new Date().toLocaleString('it-IT', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }), giocate: QS.giocate };
+  try { await Promise.all([document.fonts.load('800 40px "Barlow Condensed"'), document.fonts.load('600 30px "Barlow Condensed"')]); } catch (e) {}
+  QS.done = { url: qDraw(slip), id }; QS.msg = ''; qRerender();
+}
+document.addEventListener('click', e => {
+  if (!/^#\/quote/.test(location.hash)) return;
+  const t = e.target.closest('button, a'); if (!t) return;
+  const c = QC();
+  if (t.dataset.leg) {
+    const id = t.dataset.leg, i = QS.legs.indexOf(id); QS.msg = '';
+    if (i >= 0) QS.legs.splice(i, 1); else if (QS.legs.length >= (+c.maxLegs || 2)) QS.msg = 'Massimo ' + (+c.maxLegs || 2) + ' condizioni concatenate: togline una.'; else QS.legs.push(id);
+    qRerender();
+  } else if (t.dataset.qxleg) { QS.legs = QS.legs.filter(x => x !== t.dataset.qxleg); QS.msg = ''; qRerender(); }
+  else if (t.hasAttribute('data-qadd')) {
+    const cb = qCombo(QS.legs), st = Math.round(+QS.stake * 100) / 100;
+    if (!cb || cb.bad || qClosed()) return;
+    if (!(st >= 1 && st <= (+c.stakeMax || 1000))) { QS.msg = 'La puntata deve essere tra 1 e ' + (+c.stakeMax || 1000) + ' gettoni.'; return qRerender(); }
+    if (QS.giocate.length >= (+c.maxGiocate || 6)) { QS.msg = 'Hai raggiunto il massimo di giocate per schedina.'; return qRerender(); }
+    QS.giocate.push({ legs: QS.legs.slice(), q: cb.q, stake: st, win: Math.round(cb.q * st * 100) / 100 }); QS.legs = []; QS.msg = ''; qRerender();
+  } else if (t.dataset.qdel) { QS.giocate.splice(+t.dataset.qdel, 1); qRerender(); }
+  else if (t.hasAttribute('data-qsend')) qSend();
+  else if (t.hasAttribute('data-qnew')) { QS.giocate = []; QS.legs = []; QS.done = null; qRerender(); }
+  else if (t.hasAttribute('data-qshare')) {
+    fetch(QS.done.url).then(r => r.blob()).then(b => { const f = new File([b], 'schedina-' + QS.done.id + '.png', { type: 'image/png' }); if (navigator.canShare && navigator.canShare({ files: [f] })) navigator.share({ files: [f], title: 'La mia schedina' }); else alert('Usa "Scarica immagine" e poi inviala dove vuoi.'); }).catch(() => {});
+  }
+});
+document.addEventListener('change', e => {
+  if (!/^#\/quote/.test(location.hash)) return;
+  const s = e.target.dataset && e.target.dataset.qsel; if (!s) return;
+  QS[s] = s === 'x' ? +e.target.value : e.target.value; QS.msg = ''; qRerender();
+});
+document.addEventListener('input', e => {
+  if (!/^#\/quote/.test(location.hash)) return;
+  if (e.target.id === 'qname') QS.nome = e.target.value;
+  if (e.target.id === 'qstake') { QS.stake = e.target.value; const cb = qCombo(QS.legs), w = $('#qwin'); if (cb && !cb.bad && w) w.textContent = fmtG(cb.q * Math.max(0, +e.target.value || 0)); }
+});
+
 /* ---------- router ---------- */
 const NAV_FULL = [['home', 'Home'], ['driver-standings', 'Driver Standings'], ['constructor-standings', 'Constructor Standings'], ['teams', 'Teams'], ['qualifiche', 'Qualifiche'],
-  ['race-results', 'Race Results'], ['statistics', 'Statistics'], ['pronostici', 'Pronostici'], ['calendar', 'Calendar'], ['giornale', 'Giornale'], ['regolamento', 'Regolamento'], ['albo', "Albo d'oro"]];
+  ['race-results', 'Race Results'], ['statistics', 'Statistics'], ['pronostici', 'Pronostici'], ['quote', 'Quote'], ['calendar', 'Calendar'], ['giornale', 'Giornale'], ['regolamento', 'Regolamento'], ['albo', "Albo d'oro"]];
 const NAVALL = NAV_FULL.map(n => [n[0], L(n[1])]);
-const NAV = NAVALL.filter(n => (!TEASER || n[0] === 'home') && !(SEAS.length > 1 && n[0] === 'albo'));
+const NAV = NAVALL.filter(n => (!TEASER || n[0] === 'home') && !(SEAS.length > 1 && n[0] === 'albo') && !(n[0] === 'quote' && !qOn()));
 if (SEAS.length > 1) {
   const row = document.createElement('div'); row.className = 'brandrow';
   const br = $('.brand'); br.parentNode.insertBefore(row, br); row.appendChild(br);
@@ -918,6 +1196,7 @@ function render() {
   if (page === 'teams' && !TEASER) loadComments();
   if (page === 'diagnosi') runDiag();
   if (page === 'statistics') initChart();
+  if (page === 'pronostici') pInit();
 }
 /* percorso del brano: accetta nomi con spazi, accenti e parentesi; rifiuta solo schemi pericolosi */
 function musicSrc() {
@@ -944,4 +1223,5 @@ window.addEventListener('hashchange', render);
 render();
 initMusic();
 window.__APEX_STATE = S;
+pLoad();
 })();

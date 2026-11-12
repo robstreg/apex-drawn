@@ -69,7 +69,7 @@ code{background:var(--p2);padding:1px 6px;font-size:14px}
     <span id="copied" class="msg ok" hidden>Copiato. Ora incollalo in data.js.</span>
   </section>
 
-  <h2 class="h2 sec" id="pr">Aggiungi i pronostici</h2>
+<!-- <h2 class="h2 sec" id="pr">Aggiungi i pronostici</h2>
   <section class="panel">
     <ol class="steps">
       <li>Scrivi il numero del GP e, per ogni persona, una riga: <code>Nome: Primo, Secondo, Terzo</code> (i tre piloti previsti sul podio, in ordine).</li>
@@ -84,7 +84,7 @@ code{background:var(--p2);padding:1px 6px;font-size:14px}
     <pre class="out" id="pout" aria-label="Blocco pronostici">Qui comparirà il blocco.</pre>
     <button class="btn" id="pcopy" disabled>Copia pronostici</button>
     <span id="pcopied" class="msg ok" hidden>Copiato. Ora incollalo in data.js.</span>
-  </section>
+  </section> -->
 </main>
 <script src="data.js"></script>
 <script src="data-s2.js"></script>
@@ -246,7 +246,7 @@ code{background:var(--p2);padding:1px 6px;font-size:14px}
   build();
 })();
 </script>
-<script>
+<!-- <script>
 (function () {
   const D = window[((window.STAGIONI || []).find(s => String(s.id) === new URLSearchParams(location.search).get('s')) || (window.STAGIONI || []).find(s => s.id === window.STAGIONE_CORRENTE) || { dati: 'APEX' }).dati || 'APEX'], $ = s => document.querySelector(s), have = Object.keys(D.pronostici || {}).map(Number);
   const allN = Object.keys(D.risultati).map(Number), doneMax = allN.length ? Math.max.apply(null, allN) : 0;
@@ -293,6 +293,6 @@ code{background:var(--p2);padding:1px 6px;font-size:14px}
   });
   build();
 })();
-</script>
+</script> -->
 </body>
 </html>

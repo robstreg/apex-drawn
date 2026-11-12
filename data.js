@@ -53,7 +53,7 @@ window.APEX = {
     { n: 3,  nome: "GP 3",  circuito: "Circuito del deserto", data: "04/11/2026" },
     { n: 4,  nome: "GP 4",  circuito: "Circuito fallico", data: "09/11/2026" },
     { n: 5,  nome: "GP 5",  circuito: "Circuito cittadino notturno", data: "11/11/2026" },
-    { n: 6,  nome: "GP 6",  circuito: "Circuito lungo lungo", data: "12/11/2026" },
+    { n: 6,  nome: "GP 6",  circuito: "Circuito lungo lungo", data: "16/11/2026" },
     { n: 7,  nome: "GP 7",  circuito: "", data: "" },
     { n: 8,  nome: "GP 8",  circuito: "", data: "" },
     { n: 9,  nome: "GP 9",  circuito: "", data: "" },
@@ -84,6 +84,7 @@ window.APEX = {
     { n: 2, data: "2026-11-02", titolo: "La prima gara" },
     { n: 3, data: "2026-11-04", titolo: "Chi allunga e chi rinasce" },
     { n: 4, data: "2026-11-09", titolo: "La guerra di Piero" },
+    { n: 5, data: "2026-11-12", titolo: "Ombre oscure" },
     // { n: 1, data: "2026-11-02", titolo: "Il grande inizio" },
   ],
  

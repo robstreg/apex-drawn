@@ -50,9 +50,14 @@ code{background:var(--p2);padding:1px 6px;font-size:14px}
 
     <div class="cols">
       <div><label for="n">GP n.</label><input id="n" type="number" min="1" max="99"></div>
+      <div><label for="pp">Pole position (facoltativo)</label><select id="pp"><option value="">Automatica dalla griglia</option></select></div>
       <div><label for="fp">Giro veloce, pilota (facoltativo)</label><select id="fp"><option value="">Nessuno</option></select></div>
       <div><label for="ft">Giro veloce, tempo</label><input id="ft" placeholder="1:03,412"></div>
     </div>
+
+    <label for="img">Oppure carica lo screenshot dell'arrivo (anche più di uno, se la lista scorre)</label>
+    <input type="file" id="img" accept="image/*" multiple> <button class="btn" id="ocrgo" type="button">Leggi immagini</button>
+    <p class="note" id="ocrmsg">La lettura avviene nel tuo browser. Dopo la lettura controlla sempre nomi e tempi.</p>
 
     <label for="raw">Arrivo (una riga per pilota)</label>
     <textarea id="raw" spellcheck="false" placeholder="Nihholo	05:24,508&#10;Risorto	+10,955&#10;RobstregMN	+12,784"></textarea>
@@ -90,7 +95,7 @@ code{background:var(--p2);padding:1px 6px;font-size:14px}
   const nicks = D.piloti.map(p => p.nick);
   const done = Object.keys(D.risultati).map(Number);
   $('#n').value = (done.length ? Math.max.apply(null, done) : 0) + 1;
-  nicks.forEach(k => { const o = document.createElement('option'); o.value = k; o.textContent = k; $('#fp').appendChild(o); });
+  nicks.forEach(k => { const o = document.createElement('option'); o.value = k; o.textContent = k; $('#fp').appendChild(o); const o2 = o.cloneNode(true); $('#pp').appendChild(o2); });
 
   function findNick(raw) {
     const l = raw.toLowerCase();
@@ -128,8 +133,8 @@ code{background:var(--p2);padding:1px 6px;font-size:14px}
     if (rows.length && absent.length) msgs.push(['info', 'Assenti (0 punti): ' + absent.join(', ') + '.']);
     if (rows.length && !err) msgs.push(['ok', rows.length + ' piloti, tutto in regola.']);
     const ft = $('#ft').value.trim(), fp = $('#fp').value;
-    const fl = fp ? '{ pilota: "' + fp + '", tempo: "' + ft.replace(/"/g, '') + '" }' : 'null';
-    const text = rows.length ? '    ' + n + ': {\n      giroVeloce: ' + fl + ',\n      arrivo: [\n' +
+    const pole = $('#pp').value, fl = fp ? '{ pilota: "' + fp + '", tempo: "' + ft.replace(/"/g, '') + '" }' : 'null';
+    const text = rows.length ? '    ' + n + ': {\n      giroVeloce: ' + fl + ',\n      pole: "' + pole + '",\n      arrivo: [\n' +
       rows.map((r, i) => '        [' + r.map(x => JSON.stringify(x)).join(', ') + ']' + (i < rows.length - 1 ? ',' : '')).join('\n') + '\n      ]\n    },' : '';
     $('#msgs').innerHTML = msgs.map(m => '<p class="msg ' + m[0] + '">' + m[1].replace(/</g, '&lt;') + '</p>').join('');
     $('#out').textContent = text || 'Qui comparirà il blocco.';
@@ -146,6 +151,97 @@ code{background:var(--p2);padding:1px 6px;font-size:14px}
       const s = getSelection(); s.removeAllRanges(); s.addRange(r);
       try { document.execCommand('copy'); ok(); } catch (e) {}
     }
+  });
+  /* ---------- lettura dell'arrivo da immagine (OCR nel browser, nessun dato esce dal tuo computer) ---------- */
+  function lev(a, b) {
+    const m = [];
+    for (let i = 0; i <= a.length; i++) { m[i] = [i]; }
+    for (let j = 1; j <= b.length; j++) m[0][j] = j;
+    for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++)
+      m[i][j] = Math.min(m[i - 1][j] + 1, m[i][j - 1] + 1, m[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    return m[a.length][b.length];
+  }
+  function matchNick(raw) {
+    const norm = s => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const l = norm(raw); if (!l) return null;
+    const ex = nicks.find(k => norm(k) === l); if (ex) return ex;
+    let best = null, bd = 99;
+    nicks.forEach(k => { const d = lev(l, norm(k)); if (d < bd) { bd = d; best = k; } else if (d === bd) best = null; });
+    return best && bd <= Math.max(1, Math.floor(l.length / 5)) ? best : null;
+  }
+  function cleanTime(t) {
+    t = t.replace(/\s+/g, '').replace(/[Oo]/g, '0').replace(/[Il|]/g, '1').replace(/S/g, '5');
+    t = t.replace(/[.:](\d{3})$/, ',$1');
+    return t;
+  }
+  const TOK = '(\\+?\\s?[\\dOoIl|S]{1,3}\\s?:\\s?[\\dOoIl|S]{2}\\s?[.,:]\\s?[\\dOoIl|S]{3}|\\+?\\s?[\\dOoIl|S]{1,3}\\s?[.,]\\s?[\\dOoIl|S]{3}|DNF|RIT\\.?|RETIRED)';
+  const LINE_RE = new RegExp('^(.*?)\\s+' + TOK + '\\s*$', 'i');
+  function secOf(t) { if (t === 'DNF') return 1e9; const x = t.replace(/^\+/, '').replace(',', '.'); const p = x.split(':'); return p.length > 1 ? (+p[0]) * 60 + parseFloat(p[1]) : parseFloat(x); }
+  /* le posizioni (1., 2., ...) vengono lette male dall'OCR: si usano solo nome e tempo; l'ordine lo danno i tempi */
+  function parseLine(line) {
+    const m = line.match(LINE_RE); if (!m) return null;
+    const name = m[1].replace(/^[^A-Za-z]+/, '').replace(/[|_]/g, '').trim();
+    if (name.length < 3 || /\s/.test(name)) return null;
+    let tm = /^(dnf|rit\.?|retired)$/i.test(m[2]) ? 'DNF' : cleanTime(m[2]);
+    if (tm !== 'DNF' && !tm.includes(':') && !tm.startsWith('+')) tm = '+' + tm;
+    return { name, time: tm, sec: tm.includes(':') ? -1 : secOf(tm) };
+  }
+  function prepImage(file) {
+    return new Promise((res, rej) => {
+      const url = URL.createObjectURL(file), img = new Image();
+      img.onload = () => {
+        const k = 3, c = document.createElement('canvas'); c.width = img.width * k; c.height = img.height * k;
+        const x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(img, 0, 0, c.width, c.height);
+        const d = x.getImageData(0, 0, c.width, c.height), p = d.data; let sum = 0;
+        for (let i = 0; i < p.length; i += 4) { const g = 0.299 * p[i] + 0.587 * p[i + 1] + 0.114 * p[i + 2]; p[i] = p[i + 1] = p[i + 2] = g; sum += g; }
+        const inv = sum / (p.length / 4) < 128;
+        for (let i = 0; i < p.length; i += 4) { let g = inv ? 255 - p[i] : p[i]; g = Math.max(0, Math.min(255, (g - 40) * 1.5)); p[i] = p[i + 1] = p[i + 2] = g; }
+        x.putImageData(d, 0, 0); URL.revokeObjectURL(url); res(c);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('Immagine non leggibile: ' + file.name)); };
+      img.src = url;
+    });
+  }
+  function loadOcr() {
+    if (window.Tesseract) return Promise.resolve();
+    return new Promise((res, rej) => {
+      const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+      s.onload = res; s.onerror = () => rej(new Error('Non riesco a caricare il lettore di immagini: serve la connessione a internet.')); document.head.appendChild(s);
+    });
+  }
+  $('#ocrgo').addEventListener('click', async () => {
+    const files = [].slice.call($('#img').files), say = t => { $('#ocrmsg').textContent = t; };
+    if (!files.length) return say('Scegli prima una o più immagini.');
+    $('#ocrgo').disabled = true;
+    try {
+      say('Carico il lettore (la prima volta ci mette qualche secondo)...');
+      await loadOcr();
+      const worker = await Tesseract.createWorker('eng');
+      await worker.setParameters({ tessedit_pageseg_mode: '6', preserve_interword_spaces: '1' });
+      const found = [], notes = [];
+      for (let i = 0; i < files.length; i++) {
+        say('Leggo l\'immagine ' + (i + 1) + ' di ' + files.length + '...');
+        const r = await worker.recognize(await prepImage(files[i]));
+        (window.__ocrRaw = window.__ocrRaw || []).push(r.data.text);
+        r.data.text.split(/\r?\n/).forEach(line => { const e = parseLine(line.trim()); if (e) found.push(e); });
+      }
+      await worker.terminate();
+      if (!found.length) { say('Non sono riuscito a leggere nessuna riga. Prova uno screenshot più grande o scrivi l\'arrivo a mano.'); return; }
+      const seen = new Set(), lines = [];
+      found.forEach(e => { e.nk = matchNick(e.name); e.key = e.nk || e.time; });
+      found.sort((x, y) => x.sec - y.sec);
+      found.forEach((e, idx) => {
+        if (seen.has(e.key)) return; seen.add(e.key);
+        if (!e.nk) notes.push('"' + e.name + '" (' + e.time + ') non corrisponde a nessun pilota');
+        else if (e.nk.toLowerCase() !== e.name.toLowerCase().replace(/[^a-z0-9]/g, '')) notes.push('"' + e.name + '" letto come ' + e.nk);
+        lines.push((e.nk || e.name.replace(/\s+/g, '')) + '\t' + e.time);
+      });
+      if (found[0].sec !== -1) notes.push('non trovo il vincitore (la riga col tempo totale): controlla che nello screenshot ci sia la prima riga');
+      $('#raw').value = lines.join('\n');
+      $('#raw').dispatchEvent(new Event('input', { bubbles: true }));
+      say('Letti ' + lines.length + ' piloti (se la lista era più lunga di uno screenshot, caricali tutti insieme). ' + (notes.length ? 'Da controllare: ' + notes.join('; ') + '. ' : '') + 'Controlla SEMPRE nomi e tempi qui sotto prima di copiare.');
+    } catch (e) { say('Errore: ' + (e && e.message ? e.message : e)); }
+    finally { $('#ocrgo').disabled = false; }
   });
   build();
 })();

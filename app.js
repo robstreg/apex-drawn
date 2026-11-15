@@ -977,7 +977,7 @@ pages.regolamento = function () {
 };
 
 /* ---------- QUOTE E SCHEDINA (gettoni virtuali) ---------- */
-const QC = () => Object.assign({ attiva: true, gp: 0, chiusura: '', margine: 10, tempoVincitore: 0, maxLegs: 2, maxGiocate: 6, stakeMax: 1000, stakeDef: 10 }, D.quote || {});
+const QC = () => Object.assign({ attiva: true, gp: 0, chiusura: '', margine: 10, tempoVincitore: 0, minLegs: 3, maxLegs: 5, quotaMax: 150, vincitaMax: 0, maxGiocate: 6, stakeMax: 1000, stakeDef: 10 }, D.quote || {});
 const qOn = () => !!D.quote && D.quote.attiva !== false;
 const QS = { legs: [], giocate: [], nome: '', stake: 0, a: '', b: '', x: 10, msg: '', done: null };
 let QM = null, QKey = '';
@@ -1025,8 +1025,8 @@ function qLeg(id) {
   let fn, label;
   if (t === 'win') { fn = i => P[i * nD + a] === 0; label = p[1] + ' vince il GP'; }
   else if (t === 'pod') { fn = i => P[i * nD + a] < 3; label = p[1] + ' sul podio'; }
-  else if (t === 'sec') { fn = i => P[i * nD + a] === 1; label = p[1] + ' chiude secondo'; }
   else if (t === 'ter') { fn = i => P[i * nD + a] === 2; label = p[1] + ' chiude terzo'; }
+  else if (t === 'sec') { fn = i => P[i * nD + a] === 1; label = p[1] + ' chiude secondo'; }
   else if (t === 'last') { fn = i => P[i * nD + a] === nD - 1; label = p[1] + ' chiude ultimo'; }
   else if (t === 'duel') { fn = i => P[i * nD + a] < P[i * nD + b]; label = p[1] + ' batte ' + p[2]; }
   else if (t === 'gap') { fn = i => P[i * nD + a] < P[i * nD + b] && (S2[i * nD + b] - S2[i * nD + a]) * k > x; label = p[1] + ' batte ' + p[2] + ' di oltre ' + x + ' s'; }
@@ -1038,18 +1038,21 @@ function qProb(ids) {
   for (let i = 0; i < M.N; i++) { let ok = true; for (let j = 0; j < fs.length; j++) if (!fs[j](i)) { ok = false; break; } if (ok) c++; }
   return c / M.N;
 }
-function qQuota(p, combo) {
+function qQuota(p, n) {
   if (p < 0.0003) return null;
-  return Math.max(1.05, Math.min(combo ? 199 : 99, Math.round(100 / (p * (1 + QC().margine / 100))) / 100));
+  const c = QC();
+  /* il margine del banco si applica a ogni condizione: più condizioni, più il banco è protetto */
+  return Math.max(1.05, Math.min(+c.quotaMax || 150, Math.round(100 / (p * Math.pow(1 + c.margine / 100, n || 1))) / 100));
 }
+function qWin(q, st) { const m = +QC().vincitaMax; const w = Math.round(q * st * 100) / 100; return m > 0 ? Math.min(w, m) : w; }
 function qCombo(ids) {
   if (!ids.length) return null;
-  const p = qProb(ids), q = qQuota(p, ids.length > 1); let note = '';
+  const p = qProb(ids), q = qQuota(p, ids.length); let note = '', red = false;
   if (ids.length > 1) {
     if (q == null) note = 'Queste due condizioni non possono avverarsi insieme (o quasi): scegline altre.';
-    else if (ids.some((_, k) => Math.abs(p - qProb(ids.filter((__, j) => j !== k))) < 1e-9)) note = 'Una condizione è già compresa nelle altre: non aggiunge nulla alla quota, ti basta toglierla.';
+    else if (ids.some((_, k) => Math.abs(p - qProb(ids.filter((__, j) => j !== k))) < 1e-9)) { note = 'Una condizione è già compresa nelle altre: non vale come condizione in più, toglila o scegline un\'altra.'; red = true; }
   }
-  return { p, q, note, bad: q == null };
+  return { p, q, note, bad: q == null || red, short: ids.length < (+QC().minLegs || 1) };
 }
 function qRerender() { const y = window.scrollY; $('#app').innerHTML = pages.quote(); window.scrollTo(0, y); }
 function qCell(id, q) { const on = QS.legs.includes(id); return '<button type="button" class="qb' + (on ? ' on' : '') + '" data-leg="' + esc(id) + '"' + (qClosed() ? ' disabled' : '') + '>' + fmtQ(q) + '</button>'; }
@@ -1077,12 +1080,12 @@ pages.quote = function () {
   const duel = '<section class="sec"><h2 class="h2">Duelli e distacchi</h2><div class="panel qduel"><div class="qsel"><label>Pilota A<select data-qsel="a">' + opt(QS.a, '') + '</select></label><label>Pilota B<select data-qsel="b">' + opt(QS.b, QS.a) + '</select></label><label>Distacco<select data-qsel="x">' + xs + '</select></label></div><ul class="qopts">' +
     gid.map((id, i) => '<li><span>' + esc(gl[i]) + '</span>' + qCell(id, qQuota(qProb([id]))) + '</li>').join('') + '</ul><p class="muted" style="margin-top:8px">I secondi sono stimati su un GP di circa ' + Math.round(M.tRef) + ' s di durata per il vincitore.</p></div></section>';
   const cb = qCombo(QS.legs), stake = Math.max(0, +QS.stake || 0);
-  const maxL = +c.maxLegs || 2;
+  const maxL = +c.maxLegs || 5, minL = +c.minLegs || 1;
   const build = '<section class="sec"><h2 class="h2">La tua giocata</h2><div class="panel">' + (QS.msg ? '<p class="note">' + esc(QS.msg) + '</p>' : '') +
     (QS.legs.length ? '<ul class="qlegs">' + QS.legs.map(id => '<li><span>' + esc(qLeg(id).label) + '</span><button type="button" class="qx" data-qxleg="' + esc(id) + '" aria-label="Togli">×</button></li>').join('') + '</ul>' +
-      (QS.legs.length > 1 ? '<p class="muted">Giocata concatenata: vinci solo se si avverano <b>tutte</b> le condizioni. La quota è calcolata sulla probabilità congiunta.</p>' : '<p class="muted">Puoi concatenare altre condizioni (massimo ' + maxL + ').</p>') +
+      '<p class="muted">Ogni schedina è una giocata concatenata da <b>' + minL + ' a ' + maxL + ' condizioni</b>: vinci solo se si avverano <b>tutte</b>. La quota è calcolata sulla probabilità congiunta. ' + (QS.legs.length < minL ? 'Ne hai scelte ' + QS.legs.length + ': ne servono almeno ' + minL + '.' : '') + '</p>' +
       (cb.note ? '<p class="note">' + esc(cb.note) + '</p>' : '') +
-      (cb.bad ? '' : '<div class="qrow"><div class="qbig">Quota <b>' + fmtQ(cb.q) + '</b></div><label>Puntata (gettoni)<input type="number" id="qstake" min="1" max="' + (+c.stakeMax || 1000) + '" step="1" value="' + esc(QS.stake) + '"></label><div class="qbig">Vincita <b id="qwin">' + fmtG(cb.q * stake) + '</b></div></div><button type="button" class="btn" data-qadd' + (closed ? ' disabled' : '') + '>Aggiungi alla schedina</button>')
+      (cb.bad ? '' : '<div class="qrow"><div class="qbig">Quota <b>' + fmtQ(cb.q) + '</b></div><label>Puntata (gettoni)<input type="number" id="qstake" min="1" max="' + (+c.stakeMax || 1000) + '" step="1" value="' + esc(QS.stake) + '"></label><div class="qbig">Vincita <b id="qwin">' + fmtG(qWin(cb.q, stake)) + '</b></div></div>' + (+c.vincitaMax > 0 ? '<p class="muted">Vincita massima per giocata: ' + fmtG(+c.vincitaMax) + ' gettoni.</p>' : '') + '<button type="button" class="btn" data-qadd' + (closed || cb.short ? ' disabled' : '') + '>Aggiungi alla schedina</button>')
       : '<p class="muted">Nessuna condizione scelta: tocca le quote qui sopra.</p>') + '</div></section>';
   const tot = QS.giocate.reduce((s, g) => s + g.stake, 0), win = QS.giocate.reduce((s, g) => s + g.win, 0);
   const slip = '<section class="sec"><h2 class="h2">La tua schedina</h2><div class="panel">' + (QS.giocate.length ? '<ul class="qslip">' + QS.giocate.map((g, i) => '<li><div class="ql">' + g.legs.map(id => '<div>' + esc(qLeg(id).label) + '</div>').join('') + '</div><div class="qn"><span>Quota <b>' + fmtQ(g.q) + '</b></span><span>Puntata <b>' + fmtG(g.stake) + '</b></span><span>Vincita <b>' + fmtG(g.win) + '</b></span></div><button type="button" class="qx" data-qdel="' + i + '" aria-label="Elimina giocata">×</button></li>').join('') + '</ul>' +
@@ -1145,9 +1148,10 @@ document.addEventListener('click', e => {
   else if (t.hasAttribute('data-qadd')) {
     const cb = qCombo(QS.legs), st = Math.round(+QS.stake * 100) / 100;
     if (!cb || cb.bad || qClosed()) return;
+    if (cb.short) { QS.msg = 'Servono almeno ' + (+c.minLegs || 1) + ' condizioni per ogni giocata.'; return qRerender(); }
     if (!(st >= 1 && st <= (+c.stakeMax || 1000))) { QS.msg = 'La puntata deve essere tra 1 e ' + (+c.stakeMax || 1000) + ' gettoni.'; return qRerender(); }
     if (QS.giocate.length >= (+c.maxGiocate || 6)) { QS.msg = 'Hai raggiunto il massimo di giocate per schedina.'; return qRerender(); }
-    QS.giocate.push({ legs: QS.legs.slice(), q: cb.q, stake: st, win: Math.round(cb.q * st * 100) / 100 }); QS.legs = []; QS.msg = ''; qRerender();
+    QS.giocate.push({ legs: QS.legs.slice(), q: cb.q, stake: st, win: qWin(cb.q, st) }); QS.legs = []; QS.msg = ''; qRerender();
   } else if (t.dataset.qdel) { QS.giocate.splice(+t.dataset.qdel, 1); qRerender(); }
   else if (t.hasAttribute('data-qsend')) qSend();
   else if (t.hasAttribute('data-qnew')) { QS.giocate = []; QS.legs = []; QS.done = null; qRerender(); }
@@ -1163,12 +1167,12 @@ document.addEventListener('change', e => {
 document.addEventListener('input', e => {
   if (!/^#\/quote/.test(location.hash)) return;
   if (e.target.id === 'qname') QS.nome = e.target.value;
-  if (e.target.id === 'qstake') { QS.stake = e.target.value; const cb = qCombo(QS.legs), w = $('#qwin'); if (cb && !cb.bad && w) w.textContent = fmtG(cb.q * Math.max(0, +e.target.value || 0)); }
+  if (e.target.id === 'qstake') { QS.stake = e.target.value; const cb = qCombo(QS.legs), w = $('#qwin'); if (cb && !cb.bad && w) w.textContent = fmtG(qWin(cb.q, Math.max(0, +e.target.value || 0))); }
 });
 
 /* ---------- router ---------- */
 const NAV_FULL = [['home', 'Home'], ['driver-standings', 'Driver Standings'], ['constructor-standings', 'Constructor Standings'], ['teams', 'Teams'], ['qualifiche', 'Qualifiche'],
-  ['race-results', 'Race Results'], ['statistics', 'Statistics'], ['quote', 'Quote'], ['calendar', 'Calendar'], ['giornale', 'Giornale'], ['regolamento', 'Regolamento'], ['albo', "Albo d'oro"]];
+  ['race-results', 'Race Results'], ['statistics', 'Statistics'], ['pronostici', 'Pronostici'], ['quote', 'Quote'], ['calendar', 'Calendar'], ['giornale', 'Giornale'], ['regolamento', 'Regolamento'], ['albo', "Albo d'oro"]];
 const NAVALL = NAV_FULL.map(n => [n[0], L(n[1])]);
 const NAV = NAVALL.filter(n => (!TEASER || n[0] === 'home') && !(SEAS.length > 1 && n[0] === 'albo') && !(n[0] === 'quote' && !qOn()));
 if (SEAS.length > 1) {

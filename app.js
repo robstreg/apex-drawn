@@ -17,7 +17,7 @@ const team = id => D.squadre.find(t => t.id === id) || { id, nome: id, sigla: '?
 const drv = nick => D.piloti.find(p => p.nick === nick);
 const colorOf = nick => team((drv(nick) || {}).squadra).colore;
 const teamNameOf = nick => team((drv(nick) || {}).squadra).nome;
-
+ 
 /* ---------- tempi ---------- */
 function parseT(s) {
   if (s == null || s === '') return null;
@@ -30,7 +30,7 @@ function fmtT(sec) {
   return m + ':' + s.toFixed(3).padStart(6, '0').replace('.', ',');
 }
 function fmtGap(sec) { return '+' + sec.toFixed(3).replace('.', ','); }
-
+ 
 /* ---------- calcolo ---------- */
 function dropSet(vals) {
   const k = Math.max(0, vals.length - D.validi);
@@ -79,10 +79,10 @@ function compute() {
   const lastRound = played ? rounds[played - 1] : 0;
   const nextRound = lastRound < TOTAL ? lastRound + 1 : null;
   const nextGrid = (nextRound && prev) ? reverseGrid(prev) : null;
-
+ 
   const pen = nick => (D.penalita || []).filter(x => x.pilota === nick).reduce((a, x) => a + (+x.punti || 0), 0);
   const finish = (arr) => arr;
-
+ 
   const drivers = D.piloti.map(p => {
     const per = rounds.map(n => {
       const row = races[n].rows.find(r => r.nick === p.nick);
@@ -104,7 +104,7 @@ function compute() {
     String(a[name]).localeCompare(String(b[name]));
   drivers.sort((a, b) => cmp(a, b, 'nick'));
   drivers.forEach((d, i) => d.rank = i + 1);
-
+ 
   const teams = D.squadre.map(t => {
     const mine = drivers.filter(d => d.squadra === t.id);
     const per = rounds.map((n, i) => ({ n, pts: mine.reduce((a, d) => a + d.per[i].pts, 0) }));
@@ -119,7 +119,7 @@ function compute() {
   });
   teams.sort((a, b) => cmp(a, b, 'id'));
   teams.forEach((t, i) => t.rank = i + 1);
-
+ 
   /* --- classifica dopo ogni GP (per grafico, cronaca, cambi al vertice) --- */
   const emptyCounts = () => Array(D.piloti.length + 2).fill(0);
   const penaltyAt = (nick, k) => (D.penalita || []).filter(x => x.pilota === nick)
@@ -142,7 +142,7 @@ function compute() {
     tm.sort((a, b) => cmp(a, b, 'id')); tm.forEach((x, j) => x.rank = j + 1);
     return { n, dr, tm };
   });
-
+ 
   /* --- statistiche di ogni pilota --- */
   drivers.forEach(d => {
     const fin = d.per.filter(x => x.took && !x.dnf);
@@ -158,7 +158,7 @@ function compute() {
     });
     d.gained = gained; d.bestCb = bestCb;
   });
-
+ 
   /* --- sfida tra compagni di squadra --- */
   teams.forEach(t => {
     t.duel = null;
@@ -172,7 +172,7 @@ function compute() {
       t.duel = { a: a.nick, b: b.nick, aw, bw, ties, both };
     }
   });
-
+ 
   /* --- premi assegnati in automatico --- */
   const awards = [];
   function award(titolo, descr, valFn, fmt, min) {
@@ -200,7 +200,7 @@ function compute() {
         nicks: fin.filter(d => d.avgPos === mn).map(d => d.nick), valore: 'posizione media ' + mn.toFixed(1).replace('.', ',') });
     }
   }
-
+ 
   /* --- corsa al titolo --- */
   const remaining = Math.max(0, TOTAL - played);
   const potential = (per, perRaceMax, penalty) => per.map(x => x.pts).concat(Array(remaining).fill(perRaceMax)).sort((a, b) => b - a)
@@ -213,7 +213,7 @@ function compute() {
     return { remaining, rows, decided: remaining === 0 || others.every(r => !r.alive) };
   };
   const title = played ? { drivers: raceFor(drivers, D.punti[0], x => x.nick), teams: raceFor(teams, D.punti[0] + (D.punti[1] || 0), x => x.id) } : null;
-
+ 
   /* --- pronostici --- */
   const PP = Object.assign({ vincitore: 5, secondo: 3, terzo: 3, nelPodio: 1, podioPerfetto: 5 }, D.pronosticiPunti || {});
   const pron = { PP, rounds: [], byRound: {}, ranking: [] };
@@ -246,12 +246,12 @@ function compute() {
     if (mx > 0) awards.push({ titolo: 'Il mago dei pronostici', descr: 'Chi ha totalizzato più punti nei pronostici.',
       nicks: pron.ranking.filter(x => x.total === mx).map(x => x.name), valore: plur(mx, 'punto', 'punti') });
   }
-
+ 
   return { warns, rounds, races, played, lastRound, nextRound, nextGrid, drivers, teams, hist, awards, title, remaining, pron };
 }
 const TEASER = !(D.piloti && D.piloti.length);
 let S = TEASER ? { warns: [], rounds: [], races: {}, played: 0, lastRound: 0, nextRound: 1, drivers: [], teams: [], hist: [], awards: [], title: null, remaining: TOTAL, pron: { rounds: [], ranking: [], byRound: {} } } : compute();
-
+ 
 /* ---------- componenti ---------- */
 const VERSION = '2026-11-11';
 const EXTS = ['jpg', 'JPG', 'jpeg', 'JPEG', 'png', 'PNG', 'webp'];
@@ -305,10 +305,10 @@ function head(title, lede) { return '<h1 class="h1">' + esc(L(title)) + '</h1>' 
 function warnBox() {
   return S.warns.length ? '<div class="warn"><b>Controlla data.js</b>' + S.warns.map(w => '<p>' + esc(w) + '</p>').join('') + '</div>' : '';
 }
-
+ 
 /* ---------- pagine ---------- */
 const pages = {};
-
+ 
 pages.home = function () {
   const lead = S.drivers[0];
   const prog = Array.from({ length: TOTAL }, (_, i) => {
@@ -325,7 +325,7 @@ pages.home = function () {
   );
   const tower = '<div><div class="tower">' + S.drivers.map((d, i) => row(i + 1, colorOf(d.nick), d.nick, teamNameOf(d.nick), pts(d.total), i)).join('') +
     '</div><p class="note"><a href="#/driver-standings">Classifica piloti completa</a></p></div>';
-
+ 
   let last = '';
   if (S.played) {
     const r = S.races[S.lastRound];
@@ -334,19 +334,19 @@ pages.home = function () {
       '<div class="tower">' + r.rows.slice(0, 3).map((x, i) => row(x.pos, colorOf(x.nick), x.nick, i === 0 ? x.time : x.time, pts(x.pts), i)).join('') + '</div>' +
       '<p class="note"><a href="#/race-results/' + r.n + '">Risultato completo</a></p></section>';
   } else last = '<section class="panel"><h2 class="h2">Ultimo GP</h2><p class="empty">Nessun GP disputato.</p></section>';
-
+ 
   const cons = '<section class="panel"><h2 class="h2">Costruttori</h2><div class="tower">' +
     S.teams.map((t, i) => row(i + 1, t.def.colore, t.def.nome, t.mine.map(m => m.nick).join(' e '), pts(t.total), i)).join('') +
     '</div><p class="note"><a href="#/constructor-standings">Classifica costruttori completa</a></p></section>';
-
+ 
   const nextName = S.nextRound ? (D.calendario.find(c => c.n === S.nextRound) || {}).nome || 'GP ' + S.nextRound : '';
   const grid = '<section class="panel"><h2 class="h2">' + (S.nextRound ? 'Griglia ' + esc(nextName) : 'Griglia') + '</h2>' +
     (S.nextGrid ? gridList(S.nextGrid) + '<p class="note">' + (S.played ? 'Inversa rispetto all\'arrivo del GP precedente' : 'Inversa rispetto alle qualifiche mondiale') + ': l\'ultimo parte in pole.</p>' :
       '<p class="empty">' + (S.nextRound ? 'La griglia del primo GP viene decisa prima della gara.' : 'Campionato concluso.') + '</p>') + '</section>';
-
+ 
   return '<div class="home">' + warnBox() + '<div class="hero">' + hero + tower + '</div>' + pBanner() + (S.played ? '<div class="sec">' + titleCard() + '</div>' : '') + '<div class="grid3 sec">' + last + cons + grid + '</div></div>';
 };
-
+ 
 function perCells(per, drop) {
   let h = '';
   for (let n = 1; n <= TOTAL; n++) {
@@ -366,7 +366,7 @@ function perHeads() {
   }
   return h;
 }
-
+ 
 pages['driver-standings'] = function () {
   const body = S.drivers.map(d => '<tr style="--c:' + colorOf(d.nick) + '"><td>' + d.rank + '</td>' +
     '<td><span class="who">' + nameHtml(d.nick) + '</span><span class="team">' + esc(teamNameOf(d.nick)) + '</span></td>' +
@@ -375,7 +375,7 @@ pages['driver-standings'] = function () {
     '<div class="tw"><table><thead><tr><th>Pos</th><th>Pilota</th>' + perHeads() + '<th class="tot">Punti</th></tr></thead><tbody>' + body + '</tbody></table></div>' +
     '<p class="note">I risultati scartati sono barrati. Il trattino indica un GP senza partecipazione.</p>';
 };
-
+ 
 pages['constructor-standings'] = function () {
   const body = S.teams.map(t => '<tr style="--c:' + t.def.colore + '"><td>' + t.rank + '</td>' +
     '<td><span class="who">' + esc(t.def.nome) + '</span><span class="team">' + esc(t.mine.map(m => m.nick).join(' e ')) + '</span></td>' +
@@ -384,7 +384,7 @@ pages['constructor-standings'] = function () {
     '<div class="tw"><table><thead><tr><th>Pos</th><th>Scuderia</th>' + perHeads() + '<th class="tot">Punti</th></tr></thead><tbody>' + body + '</tbody></table></div>' +
     '<p class="note">I punteggi scartati sono barrati.</p>';
 };
-
+ 
 pages.teams = function () {
   const order = S.teams;
   return warnBox() + head('Teams', 'Le quattro scuderie e i loro piloti.') + '<div class="grid2">' + order.map(t =>
@@ -394,7 +394,7 @@ pages.teams = function () {
     duelHtml(t) + '<div class="tstats"><div><b>' + t.wins + '</b><span>Vittorie</span></div><div><b>' + t.podiums + '</b><span>Podi</span></div><div><b>' + t.poles + '</b><span>Pole</span></div></div></article>'
   ).join('') + '</div>' + commentsBox();
 };
-
+ 
 /* commenti: salvati in un Foglio Google tramite uno script (vedi README) */
 const CK = 'apex_comment_user', CT = 'apex_comment_time';
 function cUrl() { const u = D.commenti && D.commenti.url; return /^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(u || '') ? u : ''; }
@@ -446,7 +446,7 @@ function loadComments() {
   });
   fetchComments();
 }
-
+ 
 /* ---------- grafico dell'andamento ---------- */
 const SURF = '#161922', GRIDC = '#2b303c', INK = '#eef0f5', MUTC = '#8e97aa', SHAPES = ['circle', 'square', 'triangle', 'diamond'];
 function markSvg(shape, cx, cy, fill, r) {
@@ -562,7 +562,7 @@ function initChart() {
   lg.addEventListener('mouseover', ev => foc(ev, true)); lg.addEventListener('mouseout', ev => foc(ev, false));
   if (typeof ResizeObserver !== 'undefined') { let w0 = wrap.clientWidth; new ResizeObserver(() => { if (wrap.clientWidth !== w0) { w0 = wrap.clientWidth; draw(); } }).observe(wrap); }
 }
-
+ 
 /* ---------- premi, cronaca, corsa al titolo, sfida in famiglia ---------- */
 function awardsHtml() {
   if (!S.awards.length) return '';
@@ -621,8 +621,8 @@ function duelHtml(t) {
     '<div class="dbar" aria-hidden="true"><i style="flex:' + d.aw + '"></i>' + (d.ties ? '<i class="tie" style="flex:' + d.ties + '"></i>' : '') + '<i class="b" style="flex:' + d.bw + '"></i></div>' +
     '<p class="dnote">Conta chi arriva davanti nelle gare in cui entrambi sono al via.' + (d.ties ? ' Pari: ' + d.ties + '.' : '') + '</p></div>';
 }
-
-
+ 
+ 
 /* ---------- stagioni: teaser, albo d'oro ---------- */
 function teaserPage() {
   const A = D.annuncio || {}, slots = Math.min(40, A.posti || 20);
@@ -671,7 +671,7 @@ pages.albo = function () {
   return head("Albo d'oro", 'I campioni di ogni stagione e i numeri di tutti i tempi.') + '<div class="albo">' + cards + '</div>' + hof;
 };
 function team2(data, id) { const t = (data.squadre || []).find(x => x.id === id); return t ? t.nome : id; }
-
+ 
 /* ---------- scheda pilota ---------- */
 pages.driver = function (sel) {
   const nick = decodeURIComponent(sel || ''), d = S.drivers.find(x => x.nick === nick);
@@ -702,7 +702,7 @@ pages.driver = function (sel) {
     (S.played ? '<h2 class="h2 sec">GP per GP</h2><div class="tw"><table><thead><tr><th>GP</th><th>Griglia</th><th>Arrivo</th><th class="tot">Punti</th><th>+/-</th></tr></thead><tbody>' + body + '</tbody></table></div><p class="note">I punti barrati sono i risultati scartati.</p>' : '') + mate +
     '<p class="note"><a href="#/driver-standings">Torna alla classifica piloti</a></p>';
 };
-
+ 
 /* ---------- pronostici ---------- */
 /* pronostici online: moduli nel sito, salvati in un Foglio Google (vedi README, file pronostici-script.gs) */
 const PO = { state: 'idle', online: [], manual: null, msg: null };
@@ -801,7 +801,7 @@ pages.pronostici = function (sel) {
     (e.score && e.score.perfect ? '<p class="perf">Podio perfetto!</p>' : '') + '</article>').join('');
   return warnBox() + head('Pronostici', 'Indovina il podio di ogni GP e scala la classifica dei pronostici.') + status + load + rank + '<h2 class="h2 sec">Pronostici GP ' + n + '</h2>' + tabs + real + '<div class="pgrid">' + cards + '</div>' + rules;
 };
-
+ 
 pages.qualifiche = function () {
   const Q = D.qualifiche || {}, list = Q.risultati || [];
   const intro = 'Le qualifiche disputate prima del campionato, da cui sono nate le quattro scuderie.';
@@ -819,7 +819,7 @@ pages.qualifiche = function () {
     '<div class="tw"><table><thead><tr><th>Pos</th><th>Pilota</th><th>Tempo</th><th class="l">Scuderia</th><th class="l">Compagno</th></tr></thead><tbody>' + body + '</tbody></table></div>' +
     (Q.nota ? '<p class="note">' + esc(Q.nota) + '</p>' : '');
 };
-
+ 
 pages.giornale = function (sel) {
   const G = (D.giornale || []).slice().sort((a, b) => a.n - b.n);
   const intro = 'Il quotidiano ufficiale del campionato mondiale Apex Drawn.';
@@ -835,7 +835,7 @@ pages.giornale = function (sel) {
     '<figure class="paper"><a href="' + esc(list[0]) + '" target="_blank" rel="noopener">' + imgTag(list, 'Prima pagina del numero ' + cur.n + ' di Safe Sport', 'paper') + '</a></figure>' +
     '<p class="note">Tocca l\'immagine per aprirla a grandezza intera.</p>';
 };
-
+ 
 pages['race-results'] = function (sel) {
   let n = +sel; if (!S.rounds.includes(n)) n = S.lastRound;
   const tabs = '<nav class="tabs" aria-label="Gran Premi">' + Array.from({ length: TOTAL }, (_, i) => {
@@ -861,7 +861,7 @@ pages['race-results'] = function (sel) {
     (hasGrid ? '<p class="note">+/- è il numero di posizioni guadagnate (+) o perse (-) rispetto alla griglia di partenza.</p>' : '') +
     banner(n, true);
 };
-
+ 
 function bars(title, key) {
   const list = S.drivers.slice().sort((a, b) => b[key] - a[key] || a.rank - b.rank);
   const max = Math.max(1, list[0] ? list[0][key] : 1);
@@ -894,7 +894,7 @@ pages.statistics = function () {
     '<div class="grid2">' + bars('Vittorie', 'wins') + bars('Podi', 'podiums') + bars('Pole position', 'poles') + bars('Giri veloci', 'fls') + '</div>' +
     '<h2 class="h2 sec">Record</h2>' + recs + chartBox() + awardsHtml();
 };
-
+ 
 pages.calendar = function () {
   const items = Array.from({ length: TOTAL }, (_, i) => {
     const n = i + 1, c = D.calendario.find(x => x.n === n) || { n, nome: 'GP ' + n, circuito: '', data: '' };
@@ -907,7 +907,7 @@ pages.calendar = function () {
   const grid = S.nextGrid ? '<h2 class="h2 sec">Griglia del GP ' + S.nextRound + '</h2><div class="panel">' + gridList(S.nextGrid) + '</div>' : '';
   return warnBox() + head('Calendar', TOTAL + ' Gran Premi. Il nome di un GP disputato apre il risultato.') + '<div class="cal">' + items.join('') + '</div>' + grid;
 };
-
+ 
 pages.diagnosi = function () {
   return head('Diagnosi del sito', 'Controllo automatico di dati, giornale, foto, commenti e musica. Questa pagina non è nel menu.') +
     '<div class="dg" id="dg"><p class="empty">Controllo in corso...</p></div>';
@@ -921,7 +921,7 @@ async function runDiag() {
   const add = (st, t, x) => { rows.push([st, t, x]); box.innerHTML = rows.map(r => '<div class="dgr ' + r[0] + '"><span class="dgs">' + NAMES[r[0]] + '</span><div><b>' + esc(r[1]) + '</b><p>' + esc(r[2]) + '</p></div></div>').join(''); };
   add('info', 'Versione del sito', 'app.js versione ' + VERSION + '. Se non è quella dell\'ultimo zip che ti ho mandato, il file app.js non è stato sostituito, oppure la pagina è in cache: ricarica forzando (Ctrl+F5; su telefono chiudi e riapri il browser).');
   add(S.warns.length ? 'bad' : 'ok', 'Risultati in data.js', S.played + ' GP inseriti su ' + TOTAL + '.' + (S.warns.length ? ' Problemi: ' + S.warns.join(' ') : ' Nessun errore nei nickname o nei tempi.'));
-
+ 
   if (!Array.isArray(D.giornale)) add('bad', 'Giornale', 'Nel data.js manca il blocco "giornale: [ ... ]". Probabilmente il data.js è di una versione precedente: incolla il blocco sopra la riga "risultati: {".');
   else if (!D.giornale.length) add('info', 'Giornale', 'Il blocco giornale è vuoto, quindi la pagina dice che il primo numero non è uscito. Attenzione: le righe che iniziano con // sono commenti e vengono ignorate. Togli le due barre e scrivi ad esempio: { n: 1, data: "2026-11-02", titolo: "Titolo" },');
   else for (const g of D.giornale) {
@@ -929,7 +929,7 @@ async function runDiag() {
     if (f) add('ok', 'Giornale numero ' + g.n, 'Trovato il file ' + f + '.');
     else add('bad', 'Giornale numero ' + g.n, 'Non trovo il file ' + list[0] + (list.length > 1 ? ' (provato anche ' + list.slice(1).join(', ') + ')' : '') + '. Il file deve essere nella cartella "giornale" del sito, con questo nome e il numero uguale a n: ' + g.n + '.');
   }
-
+ 
   try { const ix = await (await fetch('index.html', { cache: 'no-store' })).text();
     if (/IL-TUO-SITO/.test(ix)) add('info', 'Anteprima WhatsApp', 'In index.html c\'e\' ancora IL-TUO-SITO: sostituiscilo con l\'indirizzo vero del sito (es. nomeutente.github.io/apex-drawn) nelle due righe og:image e og:url, altrimenti il link non mostrera\' l\'immagine in anteprima.');
     else add('ok', 'Anteprima WhatsApp', 'Indirizzo del sito impostato in index.html.'); } catch (e) {}
@@ -943,11 +943,11 @@ async function runDiag() {
   } else add('info', 'Pronostici online', 'Non attivi (manca l\'indirizzo in pronosticiOnline): i pronostici si inseriscono a mano con aggiungi-gp.html.');
   if (D.pronostici && Object.keys(D.pronostici).length) add(S.warns.some(w => /^Pronostici/.test(w)) ? 'bad' : 'ok', 'Pronostici', S.pron.rounds.length + ' GP con pronostici, ' + S.pron.ranking.length + ' partecipanti.');
   else add('info', 'Pronostici', D.pronostici === undefined ? 'Nel data.js manca il blocco "pronostici: { }" (facoltativo): la pagina Pronostici dira\' che non ci sono pronostici.' : 'Nessun pronostico inserito (facoltativo).');
-
+ 
   const fotos = [];
   for (const n of S.rounds) { const l = gpFoto(n), f = await probeImg(l); if (f) fotos.push('GP ' + n + ': ' + f); }
   add('info', 'Foto dei GP', fotos.length ? 'Trovate: ' + fotos.join('; ') + '.' : 'Nessuna foto trovata (è facoltativo). Per aggiungerle: foto/gp-1.jpg, foto/gp-2.jpg...');
-
+ 
   const cm = D.commenti;
   if (!cm) add('bad', 'Commenti', 'Nel data.js manca il blocco "commenti: { url: "" },". Probabilmente il data.js è di una versione precedente.');
   else if (!cm.url) add('info', 'Commenti', 'Non configurati: "url" è vuoto in data.js, quindi la sezione resta nascosta nella pagina Teams.' + (cm.disqus !== undefined ? ' Hai ancora il vecchio campo "disqus": sostituiscilo con url, come nel README.' : ' Per attivarli segui la sezione Commenti del README.'));
@@ -959,7 +959,7 @@ async function runDiag() {
       else add('bad', 'Commenti', 'Lo script ha risposto, ma non con i commenti. Di solito il deployment non è impostato su "Chi ha accesso: Chiunque", oppure l\'indirizzo è di una versione vecchia del deployment.');
     } catch (e) { add('bad', 'Commenti', 'Non riesco a contattare lo script. Controlla l\'indirizzo e che il deployment sia "App web" con accesso "Chiunque".'); }
   }
-
+ 
   const ms = D.musica, src = musicSrc();
   if (!ms) add('bad', 'Musica', 'Nel data.js non trovo il blocco "musica: { file: "...", titolo: "..." },". Controlla che la riga sia scritta fuori da altri blocchi, subito sopra "risultati: {", con la virgola finale. Se hai appena salvato, aspetta 1-2 minuti e ricarica forzando.');
   else if (!String(ms.file || '').trim()) add('info', 'Musica', 'Il blocco musica c\'e\', ma "file" e\' vuoto, quindi il pulsante non compare. Scrivi ad esempio: musica: { file: "musica/sottofondo.mp3", titolo: "Nome del brano" },');
@@ -969,13 +969,13 @@ async function runDiag() {
     add(ok ? 'ok' : 'bad', 'Musica', ok ? 'Il file ' + ms.file + ' si carica. Il pulsante Musica compare in basso a destra (se non lo vedi, ricarica forzando).' : 'Il pulsante c\'e\', ma non riesco a caricare ' + ms.file + '. Controlla che il file sia nella cartella "musica" del sito e che il nome sia identico, maiuscole comprese.');
   }
 }
-
+ 
 pages.regolamento = function () {
   return head('Regolamento') + '<div class="rules">' + D.regolamento.map(s =>
     '<section class="panel"><h3>' + esc(s.titolo) + '</h3>' + s.righe.map(l => '<p>' + esc(l) + '</p>').join('') +
     (s.punti ? '<div class="pts">' + D.punti.map((p, i) => '<div><b>' + p + '</b><span>' + (i + 1) + '°</span></div>').join('') + '</div>' : '') + '</section>').join('') + '</div>';
 };
-
+ 
 /* ---------- QUOTE E SCHEDINA (gettoni virtuali) ---------- */
 const QC = () => Object.assign({ attiva: true, gp: 0, chiusura: '', margine: 10, tempoVincitore: 0, minLegs: 3, maxLegs: 5, quotaMax: 150, vincitaMax: 0, maxGiocate: 6, stakeMax: 1000, stakeDef: 10 }, D.quote || {});
 const qOn = () => !!D.quote && D.quote.attiva !== false;
@@ -1082,13 +1082,13 @@ pages.quote = function () {
   const cb = qCombo(QS.legs), stake = Math.max(0, +QS.stake || 0);
   const maxL = +c.maxLegs || 5, minL = +c.minLegs || 1;
   const build = '<section class="sec"><h2 class="h2">La tua giocata</h2><div class="panel">' + (QS.msg ? '<p class="note">' + esc(QS.msg) + '</p>' : '') +
-    (QS.legs.length ? '<ul class="qlegs">' + QS.legs.map(id => '<li><span>' + esc(qLeg(id).label) + '</span><button type="button" class="qx" data-qxleg="' + esc(id) + '" aria-label="Togli">×</button></li>').join('') + '</ul>' +
+    (QS.legs.length ? '<ul class="qlegs">' + QS.legs.map(id => '<li><span>' + esc(qLeg(id).label) + '</span><span class="ql1">' + fmtQ(qQuota(qProb([id]), 1)) + '</span><button type="button" class="qx" data-qxleg="' + esc(id) + '" aria-label="Togli">×</button></li>').join('') + '</ul>' +
       '<p class="muted">Ogni schedina è una giocata concatenata da <b>' + minL + ' a ' + maxL + ' condizioni</b>: vinci solo se si avverano <b>tutte</b>. La quota è calcolata sulla probabilità congiunta. ' + (QS.legs.length < minL ? 'Ne hai scelte ' + QS.legs.length + ': ne servono almeno ' + minL + '.' : '') + '</p>' +
       (cb.note ? '<p class="note">' + esc(cb.note) + '</p>' : '') +
       (cb.bad ? '' : '<div class="qrow"><div class="qbig">Quota <b>' + fmtQ(cb.q) + '</b></div><label>Puntata (gettoni)<input type="number" id="qstake" min="1" max="' + (+c.stakeMax || 1000) + '" step="1" value="' + esc(QS.stake) + '"></label><div class="qbig">Vincita <b id="qwin">' + fmtG(qWin(cb.q, stake)) + '</b></div></div>' + (+c.vincitaMax > 0 ? '<p class="muted">Vincita massima per giocata: ' + fmtG(+c.vincitaMax) + ' gettoni.</p>' : '') + '<button type="button" class="btn" data-qadd' + (closed || cb.short ? ' disabled' : '') + '>Aggiungi alla schedina</button>')
       : '<p class="muted">Nessuna condizione scelta: tocca le quote qui sopra.</p>') + '</div></section>';
   const tot = QS.giocate.reduce((s, g) => s + g.stake, 0), win = QS.giocate.reduce((s, g) => s + g.win, 0);
-  const slip = '<section class="sec"><h2 class="h2">La tua schedina</h2><div class="panel">' + (QS.giocate.length ? '<ul class="qslip">' + QS.giocate.map((g, i) => '<li><div class="ql">' + g.legs.map(id => '<div>' + esc(qLeg(id).label) + '</div>').join('') + '</div><div class="qn"><span>Quota <b>' + fmtQ(g.q) + '</b></span><span>Puntata <b>' + fmtG(g.stake) + '</b></span><span>Vincita <b>' + fmtG(g.win) + '</b></span></div><button type="button" class="qx" data-qdel="' + i + '" aria-label="Elimina giocata">×</button></li>').join('') + '</ul>' +
+  const slip = '<section class="sec"><h2 class="h2">La tua schedina</h2><div class="panel">' + (QS.giocate.length ? '<ul class="qslip">' + QS.giocate.map((g, i) => '<li><div class="ql">' + g.legs.map((id, k) => '<div>' + esc(qLeg(id).label) + ' <span class="ql1">' + fmtQ(g.lq ? g.lq[k] : null) + '</span></div>').join('') + '</div><div class="qn"><span>Quota <b>' + fmtQ(g.q) + '</b></span><span>Puntata <b>' + fmtG(g.stake) + '</b></span><span>Vincita <b>' + fmtG(g.win) + '</b></span></div><button type="button" class="qx" data-qdel="' + i + '" aria-label="Elimina giocata">×</button></li>').join('') + '</ul>' +
     '<p class="qtot">Puntato <b>' + fmtG(tot) + '</b> · Vincita possibile <b>' + fmtG(win) + '</b></p><label class="qname">Il tuo nome<input type="text" id="qname" maxlength="24" value="' + esc(QS.nome) + '" autocomplete="nickname"></label><button type="button" class="btn" data-qsend' + (closed ? ' disabled' : '') + '>Invia e ottieni la schedina</button><p class="muted" style="margin-top:8px">Riceverai un\'immagine con le tue giocate, le quote e la vincita possibile: conservala, è la tua ricevuta.</p>' : '<p class="muted">Ancora nessuna giocata (massimo ' + (+c.maxGiocate || 6) + ' per schedina).</p>') + '</div></section>';
   const modal = QS.done ? '<div class="qmodal" role="dialog" aria-modal="true" aria-label="Schedina"><div class="qbox"><img src="' + QS.done.url + '" alt="La tua schedina"><div class="qact"><a class="btn" href="' + QS.done.url + '" download="schedina-' + QS.done.id + '.png">Scarica immagine</a><button type="button" class="btn alt" data-qshare>Condividi</button><button type="button" class="btn alt" data-qnew>Nuova schedina</button></div></div></div>' : '';
   return warnBox() + head('Quote', 'Quote del GP, duelli, distacchi e giocate concatenate. Gettoni virtuali, nessun valore reale.') + info + table + duel + build + slip + modal;
@@ -1097,8 +1097,8 @@ function qFont(px, w) { return (w || 700) + ' ' + px + 'px "Barlow Condensed","A
 function qDraw(slip) {
   const W = 1080, pad = 56, cv = document.createElement('canvas'), ctx = cv.getContext('2d');
   const wrap = (txt, maxW, font) => { ctx.font = font; const out = []; let line = ''; txt.split(' ').forEach(w => { const t = line ? line + ' ' + w : w; if (ctx.measureText(t).width > maxW && line) { out.push(line); line = w; } else line = t; }); if (line) out.push(line); return out; };
-  const blocks = slip.giocate.map(g => { const lines = []; g.legs.forEach(id => wrap('• ' + qLeg(id).label, W - pad * 2 - 60, qFont(36, 600)).forEach(l => lines.push(l))); return { g, lines, h: 40 + lines.length * 44 + 70 }; });
-  const H = 300 + blocks.reduce((s, b) => s + b.h + 18, 0) + 230;
+  const blocks = slip.giocate.map(g => { const lines = []; g.legs.forEach((id, k) => wrap('• ' + qLeg(id).label, W - pad * 2 - 190, qFont(36, 600)).forEach((l, j) => lines.push({ t: l, q: j === 0 && g.lq ? fmtQ(g.lq[k]) : '' }))); return { g, lines, h: 40 + lines.length * 44 + 70 }; });
+  const H = 300 + blocks.reduce((s, b) => s + b.h + 18, 0) + 270;
   cv.width = W; cv.height = H;
   ctx.fillStyle = '#0d0f13'; ctx.fillRect(0, 0, W, H);
   ['#2f7bff', '#ffc61a', '#ff3d3d', '#25c46a'].forEach((c, i) => { ctx.fillStyle = c; ctx.fillRect(i * W / 4, 0, W / 4, 14); });
@@ -1111,7 +1111,7 @@ function qDraw(slip) {
     ctx.fillStyle = '#161922'; ctx.fillRect(pad - 16, y, W - pad * 2 + 32, b.h);
     ctx.fillStyle = b.g.legs.length > 1 ? '#ff3d3d' : '#2f7bff'; ctx.fillRect(pad - 16, y, 8, b.h);
     ctx.fillStyle = '#eef0f5'; ctx.font = qFont(36, 600);
-    b.lines.forEach((l, i) => ctx.fillText(l, pad + 8, y + 52 + i * 44));
+    b.lines.forEach((l, i) => { ctx.textAlign = 'left'; ctx.fillStyle = '#eef0f5'; ctx.fillText(l.t, pad + 8, y + 52 + i * 44); if (l.q) { ctx.textAlign = 'right'; ctx.fillStyle = '#ffc61a'; ctx.fillText(l.q, W - pad - 8, y + 52 + i * 44); ctx.textAlign = 'left'; } });
     const ny = y + 40 + b.lines.length * 44 + 36; ctx.font = qFont(34, 700);
     ctx.fillStyle = '#8e97aa'; ctx.fillText('Quota', pad + 8, ny); ctx.fillStyle = '#eef0f5'; ctx.fillText(fmtQ(b.g.q), pad + 135, ny);
     ctx.fillStyle = '#8e97aa'; ctx.fillText('Puntata', pad + 330, ny); ctx.fillStyle = '#eef0f5'; ctx.fillText(fmtG(b.g.stake), pad + 480, ny);
@@ -1124,6 +1124,7 @@ function qDraw(slip) {
   ctx.fillStyle = '#ffc61a'; ctx.fillText('Vincita possibile  ' + fmtG(win), pad, y + 134);
   ctx.fillStyle = '#8e97aa'; ctx.font = qFont(26, 500);
   ctx.fillText('Gettoni virtuali: nessun valore reale. Quote fissate al momento dell\'invio.', pad, y + 186);
+  ctx.fillText('A destra le quote singole; la quota della giocata vale per tutte insieme.', pad, y + 226);
   return cv.toDataURL('image/png');
 }
 async function qSend() {
@@ -1151,7 +1152,7 @@ document.addEventListener('click', e => {
     if (cb.short) { QS.msg = 'Servono almeno ' + (+c.minLegs || 1) + ' condizioni per ogni giocata.'; return qRerender(); }
     if (!(st >= 1 && st <= (+c.stakeMax || 1000))) { QS.msg = 'La puntata deve essere tra 1 e ' + (+c.stakeMax || 1000) + ' gettoni.'; return qRerender(); }
     if (QS.giocate.length >= (+c.maxGiocate || 6)) { QS.msg = 'Hai raggiunto il massimo di giocate per schedina.'; return qRerender(); }
-    QS.giocate.push({ legs: QS.legs.slice(), q: cb.q, stake: st, win: qWin(cb.q, st) }); QS.legs = []; QS.msg = ''; qRerender();
+    QS.giocate.push({ legs: QS.legs.slice(), lq: QS.legs.map(id => qQuota(qProb([id]), 1)), q: cb.q, stake: st, win: qWin(cb.q, st) }); QS.legs = []; QS.msg = ''; qRerender();
   } else if (t.dataset.qdel) { QS.giocate.splice(+t.dataset.qdel, 1); qRerender(); }
   else if (t.hasAttribute('data-qsend')) qSend();
   else if (t.hasAttribute('data-qnew')) { QS.giocate = []; QS.legs = []; QS.done = null; qRerender(); }
@@ -1169,7 +1170,7 @@ document.addEventListener('input', e => {
   if (e.target.id === 'qname') QS.nome = e.target.value;
   if (e.target.id === 'qstake') { QS.stake = e.target.value; const cb = qCombo(QS.legs), w = $('#qwin'); if (cb && !cb.bad && w) w.textContent = fmtG(qWin(cb.q, Math.max(0, +e.target.value || 0))); }
 });
-
+ 
 /* ---------- router ---------- */
 const NAV_FULL = [['home', 'Home'], ['driver-standings', 'Driver Standings'], ['constructor-standings', 'Constructor Standings'], ['teams', 'Teams'], ['qualifiche', 'Qualifiche'],
   ['race-results', 'Race Results'], ['statistics', 'Statistics'], ['pronostici', 'Pronostici'], ['quote', 'Quote'], ['calendar', 'Calendar'], ['giornale', 'Giornale'], ['regolamento', 'Regolamento'], ['albo', "Albo d'oro"]];
@@ -1230,3 +1231,4 @@ initMusic();
 window.__APEX_STATE = S;
 pLoad();
 })();
+ 

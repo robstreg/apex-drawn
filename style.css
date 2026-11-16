@@ -404,4 +404,4 @@ td.drop{text-decoration:line-through;opacity:.5}
 .qmodal{position:fixed;inset:0;background:#000d;z-index:50;overflow:auto;padding:16px;display:flex;justify-content:center;align-items:flex-start}
 .qbox{max-width:540px;width:100%}.qbox img{width:100%;display:block}
 .qact{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.qact .btn{text-decoration:none;font-size:17px;padding:11px 18px}
-
+.ql1{color:var(--yellow);font:700 15px var(--fd);margin-left:8px;white-space:nowrap}

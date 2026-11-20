@@ -193,6 +193,20 @@ musica: { file: "musica/Placebo-Every Me Every You.mp3", titolo: "Placebo-Every 
         ["Giusmacher22", "+35,397"]
       ]
     },
+   7: {
+      giroVeloce: { pilota: "Nihholo", tempo: "1:20.618" },
+      pole: "Giusmacher22",
+      arrivo: [
+        ["Nihholo", "6:54,498"],
+        ["BatSciscio1", "+6,988"],
+        ["Risorto", "+10,781"],
+        ["RobstregMN", "+16,029"],
+        ["SaettaMcFabri", "+24,683"],
+        ["Jarjtodt81", "+28,885"],
+        ["Patabomber", "+31,787"],
+        ["Giusmacher22", "+61,307"]
+      ]
+    },
   },
     
   /* Penalità (decurtazione di punti in classifica), facoltativo.

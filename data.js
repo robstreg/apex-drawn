@@ -54,10 +54,10 @@ window.APEX = {
     { n: 4,  nome: "GP 4",  circuito: "Circuito fallico", data: "09/11/2026" },
     { n: 5,  nome: "GP 5",  circuito: "Circuito cittadino notturno", data: "11/11/2026" },
     { n: 6,  nome: "GP 6",  circuito: "Circuito lungo lungo", data: "16/11/2026" },
-    { n: 7,  nome: "GP 7",  circuito: "Circuito forestale", data: "18/11/2026" },
-    { n: 8,  nome: "GP 8",  circuito: "Circuito embrionale", data: "19/11/2026" },
-    { n: 9,  nome: "GP 9",  circuito: "", data: "" },
-    { n: 10, nome: "GP 10", circuito: "", data: "" }
+    { n: 7,  nome: "GP 7",  circuito: "Circuito forestale", data: "20/11/2026" },
+    { n: 8,  nome: "GP 8",  circuito: "Circuito embrionale", data: "24/11/2026" },
+    { n: 9,  nome: "GP 9",  circuito: "tba", data: "24/11/2026" },
+    { n: 10, nome: "GP 10", circuito: "tba - Gran Finale", data: "25/11/2026" }
   ],
 
   /* QUALIFICHE MONDIALE: le qualifiche che hanno formato le squadre.

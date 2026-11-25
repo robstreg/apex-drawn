@@ -56,7 +56,7 @@ window.APEX = {
     { n: 6,  nome: "GP 6",  circuito: "Circuito lungo lungo", data: "16/11/2026" },
     { n: 7,  nome: "GP 7",  circuito: "Circuito forestale", data: "20/11/2026" },
     { n: 8,  nome: "GP 8",  circuito: "Circuito velodromo", data: "24/11/2026" },
-    { n: 9,  nome: "GP 9",  circuito: "tba", data: "25/11/2026" },
+    { n: 9,  nome: "GP 9",  circuito: "Circuito tortuoso", data: "25/11/2026" },
     { n: 10, nome: "GP 10", circuito: "tba - Gran Finale", data: "26/11/2026" }
   ],
 
@@ -223,7 +223,7 @@ musica: { file: "musica/Placebo-Every Me Every You.mp3", titolo: "Placebo-Every 
     },
       9: {
       giroVeloce: { pilota: "SaettaMcFabri", tempo: "1:10,751" },
-      pole: "SaettaMcFabri",
+      pole: "Nihholo",
       arrivo: [
         ["Nihholo", "6:08,068"],
         ["Risorto", "+14,537"],

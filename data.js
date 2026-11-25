@@ -222,8 +222,8 @@ musica: { file: "musica/Placebo-Every Me Every You.mp3", titolo: "Placebo-Every 
       ]
     },
       9: {
-      giroVeloce: { pilota: "SaettaMcFabri", tempo: "1:10,751" },
-      pole: "Nihholo",
+      giroVeloce: { pilota: "Nihholo", tempo: "1:10,751" },
+      pole: "SaettaMcFabri",
       arrivo: [
         ["Nihholo", "6:08,068"],
         ["Risorto", "+14,537"],

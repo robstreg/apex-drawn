@@ -86,6 +86,7 @@ window.APEX = {
     { n: 4, data: "2026-11-09", titolo: "La guerra di Piero" },
     { n: 5, data: "2026-11-12", titolo: "Ombre oscure" },
     { n: 6, data: "2026-11-21", titolo: "Abbiamo il campione!" },
+    { n: 7, data: "2026-11-27", titolo: "Il gran finale" },
     // { n: 1, data: "2026-11-02", titolo: "Il grande inizio" },
   ],
  
